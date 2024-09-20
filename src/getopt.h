@@ -39,7 +39,7 @@ extern "C"
   extern int optopt;
 
   /* function prototypes */
-#ifndef _AIX
+#if !defined( linux )&& !defined( APPLE )
   int getopt (int argc, char **argv, char *optstring);
 #endif
   int getopt_long (int argc, char **argv, const char *shortopts,

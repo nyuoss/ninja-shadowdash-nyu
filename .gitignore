@@ -10,6 +10,7 @@
 /build_log_perftest
 /canon_perftest
 /clparser_perftest
+/elide_middle_perftest
 /depfile_parser_perftest
 /hash_collision_bench
 /ninja_test
@@ -47,3 +48,15 @@
 # Visual Studio files
 /.vs/
 /out/
+
+# general dev files for Shadowdash
+*commands.md
+*CMakeFiles
+*.so
+*.dylib
+*.dll
+
+# compile hello_world
+*hello_world
+*hello_world.o
+*test1
