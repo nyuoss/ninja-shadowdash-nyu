@@ -47,3 +47,10 @@
 # Visual Studio files
 /.vs/
 /out/
+
+commands.md
+
+# New Language files
+src/shadowdash/manifest.o
+src/shadowdash/manifest.so
+src/shadowdash/manifest.h.gch
