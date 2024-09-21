@@ -123,6 +123,9 @@ set(NINJA_PYTHON "python" CACHE STRING "Python interpreter to use for the browse
 
 check_platform_supports_browse_mode(platform_supports_ninja_browse)
 
+# run clang-tidy before source code is built
+set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--config-file=/tmp/.clang-tidy")
+
 # Core source files all build into ninja library.
 add_library(libninja OBJECT
 	src/build_log.cc
