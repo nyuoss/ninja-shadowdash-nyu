@@ -10,8 +10,7 @@ jobs:
           name: InstallPreq
           command: | 
             echo "Installing clang-tidy"
-            apt-get update
-            apt-get install -y clang-tidy
+            sudo apt-get update && sudo apt-get install -y clang-tidy
             echo "Installed"
       - run:
           name: Build
