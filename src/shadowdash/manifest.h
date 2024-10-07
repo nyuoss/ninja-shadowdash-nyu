@@ -100,6 +100,13 @@ class build {
 static constexpr auto in = "in"_v;
 static constexpr auto out = "out"_v;
 
+/*
+Parts of Ninja still left to be included in the design of Shadowdash: 
+1. The phony rule
+2. Default target statements
+3. Pools
+*/
+
 }  // namespace shadowdash
 
 #define let(name, ...) \
