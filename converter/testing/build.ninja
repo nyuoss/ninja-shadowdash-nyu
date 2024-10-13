@@ -1,18 +1,13 @@
-rule clang_tidy
-  command = clang-tidy $in
-
+flags = -O3
 rule compile
-  command = g++ -c $in -o $out
+  command = g++ $flags -c $in -o $out
 
 rule link
   command = g++ $in -o $out
 
-
 build hello.o: compile hello.cpp
+  flags = -O2
 
 build hello: link hello.o
 
-# build tidy: clang_tidy hello.cpp
-
 default hello
-
