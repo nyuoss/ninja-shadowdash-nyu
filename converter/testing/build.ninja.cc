@@ -6,11 +6,11 @@ void manifest() {
   let(flags, "-O3");
 
   auto compile = rule{ {
-      bind(command, "g++", "flags"_v, "-c", in, "-o", out),  //
+      bind(command, "g++", "flags"_v, "-c", "in"_v, "-o", "out"_v),  //
   } };
 
   auto link = rule{ {
-      bind(command, "g++", in, "-o", out),  //
+      bind(command, "g++", "in"_v, "-o", "out"_v),  //
   } };
 
   build(list{ str{ "hello.o" } },   //
@@ -30,4 +30,6 @@ void manifest() {
         {},                        //
         {}                         //
   );
+
+  default(str("hello"));
 }
