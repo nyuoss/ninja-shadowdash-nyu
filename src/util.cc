@@ -60,6 +60,9 @@
 
 #include "edit_distance.h"
 
+// my globals
+std::stringstream g_output_ss;
+
 using namespace std;
 
 void Fatal(const char* msg, ...) {

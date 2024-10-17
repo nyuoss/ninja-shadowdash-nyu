@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <cstdlib>
 
+#include <iostream>
+
 #ifdef _WIN32
 #include "getopt.h"
 #include <direct.h>
@@ -51,6 +53,9 @@
 #include "status.h"
 #include "util.h"
 #include "version.h"
+
+// mr:
+#include <fstream>
 
 using namespace std;
 
@@ -1575,6 +1580,11 @@ NORETURN void real_main(int argc, char** argv) {
     exit((ninja.*options.tool->func)(&options, argc, argv));
   }
 
+  // add preamble
+  g_output_ss << "#include \"manifest.h\"\n\n";
+  g_output_ss << "using namespace shadowdash;\n\n";
+  g_output_ss << "void manifest() {\n"; // start manifest() function
+  g_output_ss << "\n{"; // 
   // Limit number of rebuilds, to prevent infinite loops.
   const int kCycleLimit = 100;
   for (int cycle = 1; cycle <= kCycleLimit; ++cycle) {
@@ -1590,7 +1600,27 @@ NORETURN void real_main(int argc, char** argv) {
       status->Error("%s", err.c_str());
       exit(1);
     }
+}
+    g_output_ss << "\n}"; // exit manifest() function
+   
+    std::string result = g_output_ss.str();
+    std::cout << result << std::endl; // write to stdout for now, change it to write to file later
+    
+    // write to file
+    std::ofstream outFile("output.cc");
 
+    // Check if the file opened successfully
+    if (outFile.is_open()) {
+        outFile << result;
+        outFile.close();
+    } else {
+        std::cerr << "Error opening file for writing.\n";
+    }
+
+    exit(0); // exit(1) was suggested above by ninja to exit out; crashes otherwise
+}
+
+/* don't need anything other than parsing
     if (options.tool && options.tool->when == Tool::RUN_AFTER_LOAD)
       exit((ninja.*options.tool->func)(&options, argc, argv));
 
@@ -1628,6 +1658,7 @@ NORETURN void real_main(int argc, char** argv) {
       options.input_file, kCycleLimit);
   exit(1);
 }
+*/
 
 }  // anonymous namespace
 
