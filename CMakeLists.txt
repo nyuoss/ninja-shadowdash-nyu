@@ -84,6 +84,45 @@ else()
 endif()
 target_include_directories(libninja-re2c PRIVATE src)
 
+# --- Create shared library ---
+add_library(libninja_shared SHARED
+	src/build_log.cc
+	src/build.cc
+	src/clean.cc
+	src/clparser.cc
+	src/dyndep.cc
+	src/dyndep_parser.cc
+	src/debug_flags.cc
+	src/deps_log.cc
+	src/disk_interface.cc
+	src/edit_distance.cc
+	src/elide_middle.cc
+	src/eval_env.cc
+	src/graph.cc
+	src/graphviz.cc
+	src/json.cc
+	src/line_printer.cc
+	src/manifest_parser.cc
+	src/metrics.cc
+	src/missing_deps.cc
+	src/parser.cc
+	src/state.cc
+	src/status_printer.cc
+	src/string_piece_util.cc
+	src/util.cc
+	src/version.cc
+)
+
+# Link re2c library if required
+target_link_libraries(libninja_shared PRIVATE libninja-re2c)
+
+# Include directories for the shared library
+target_include_directories(libninja_shared PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+# Set shared library properties
+set_target_properties(libninja_shared PROPERTIES OUTPUT_NAME "ninja_shared")
+
+
 # --- Check for 'browse' mode support
 function(check_platform_supports_browse_mode RESULT)
 	# Make sure the inline.sh script works on this platform.
