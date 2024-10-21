@@ -1,3 +1,0 @@
-/home/yuwei/Documents/ShadowDash/steps/hello-world-graph/build/CMakeFiles/hello_world.dir
-/home/yuwei/Documents/ShadowDash/steps/hello-world-graph/build/CMakeFiles/edit_cache.dir
-/home/yuwei/Documents/ShadowDash/steps/hello-world-graph/build/CMakeFiles/rebuild_cache.dir
