@@ -131,6 +131,41 @@ bool ManifestParser::ParsePool(string* err) {
   return true;
 }
 
+std::vector<std::string> split_by_spaces(const std::string& line) {
+    std::vector<std::string> tokens;
+    std::istringstream iss(line);
+    std::string token;
+
+    while (iss >> token) {
+        tokens.push_back(token);  // Extract token and push to vector
+    }
+
+    return tokens;
+}
+
+std::string extract_variable(const std::string& token) {
+    // Check if the token starts with '$' and contains both '${' and '}'
+    if (token[0] == '$' && token.find("${") == 0 && token.find('}') != std::string::npos) {
+        // Extract the content between '${' and '}'
+        size_t start = token.find("{") + 1;
+        size_t end = token.find("}");
+        return token.substr(start, end - start);
+    }
+    
+    // Return an empty string if it's not a valid ${} expression
+    return "";
+}
+
+std::string extract_token(const std::string& token){
+	std::string output = extract_variable(token);
+	if (output.empty()){
+		return "\"" + token + "\"";
+	}
+    else {
+		return "\"" + output + "\"_v";
+    }
+}
+
 
 bool ManifestParser::ParseRule(string* err) {
   string name;
@@ -170,6 +205,21 @@ bool ManifestParser::ParseRule(string* err) {
     return lexer_.Error("expected 'command =' line", err);
 
   env_->AddRule(rule);
+    // add rule here to the stringstream
+	g_output_ss << "\nauto " << rule->name_ << " = rule{ {\n"
+		<< "    ";
+	g_output_ss << "bind(command, ";
+
+	std::vector<std::string> tokens = split_by_spaces(rule->bindings_.at("command").Unparse());
+
+    for (size_t i=0; i < tokens.size(); ++i) {
+        g_output_ss << extract_token(tokens[i]);
+        if (i != tokens.size() - 1) {
+            g_output_ss << ",";
+        }
+    }
+	g_output_ss << ")\n" << "} };\n";
+
   return true;
 }
 
