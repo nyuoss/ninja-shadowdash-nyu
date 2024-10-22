@@ -1584,10 +1584,14 @@ NORETURN void real_main(int argc, char** argv) {
   g_output_ss << "#include \"manifest.h\"\n\n";
   g_output_ss << "using namespace shadowdash;\n\n";
   g_output_ss << "void manifest() {\n"; // start manifest() function
-  g_output_ss << "\n{"; // 
+  
+ /*
   // Limit number of rebuilds, to prevent infinite loops.
   const int kCycleLimit = 100;
   for (int cycle = 1; cycle <= kCycleLimit; ++cycle) {
+    }
+}
+*/
     NinjaMain ninja(ninja_command, config);
 
     ManifestParserOptions parser_opts;
@@ -1600,7 +1604,7 @@ NORETURN void real_main(int argc, char** argv) {
       status->Error("%s", err.c_str());
       exit(1);
     }
-}
+    
     g_output_ss << "\n}"; // exit manifest() function
    
     std::string result = g_output_ss.str();
