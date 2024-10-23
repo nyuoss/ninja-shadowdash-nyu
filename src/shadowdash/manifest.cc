@@ -37,5 +37,5 @@ void manifest() {
         {}                         //
   );
 
-
+  default_(list{ str{ "hello" } });
 }
