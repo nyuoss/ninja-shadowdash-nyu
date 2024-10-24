@@ -230,6 +230,14 @@ bool ManifestParser::ParseLet(string* key, EvalString* value, string* err) {
     return false;
   if (!lexer_.ReadVarValue(value, err))
     return false;
+
+  // handle conversion of let
+  g_output_ss << "\nlet(";
+  g_output_ss << *key;
+  g_output_ss << ", \"";
+  g_output_ss << value->Evaluate(env_); // parent function gets value this way
+  g_output_ss << "\");";
+
   return true;
 }
 
