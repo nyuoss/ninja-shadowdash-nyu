@@ -248,12 +248,7 @@ namespace shadowdash {
                 return;
             }
 
-            if (build.is_phony_) {
-                std::cout << "Executing phony target: " << build.output_ << "\n";
-                return;
-            }
-
-            std::cout << "Building: " << build.output_ << "\n";
+            std::cout << (build.is_phony_ ? "Executing phony target: " : "Building: ") << build.output_ << "\n";
 
             // build all its dependencies first
             buildDependencies(build);

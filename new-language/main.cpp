@@ -9,7 +9,7 @@ int main() {
     VAR(cflags, "-Wall -Wextra");
     VAR(ldflags, "-lm");
 
-    PHONY(clean, "clean_rule", {});
+    PHONY(clean, "clean_rule");
     RULE(clean_rule,
          shadowdash::constant("rm", 2),
          shadowdash::constant("-f", 2),
@@ -39,7 +39,7 @@ int main() {
     BUILD("main", "link", {"foo.o", "bar.o", "baz.o"});
 
 
-    DEFAULT("main");
+    DEFAULT("clean");
 
     shadowDash.executeBuild();
 
