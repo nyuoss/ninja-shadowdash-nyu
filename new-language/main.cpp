@@ -14,7 +14,7 @@ int main() {
          shadowdash::constant("rm", 2),
          shadowdash::constant("-f", 2),
          shadowdash::constant("*.o", 3),
-         shadowdash::constant("baz", 3)
+         shadowdash::constant("main", 4)
     );
     RULE(cc,
          shadowdash::constant("g++", 3),

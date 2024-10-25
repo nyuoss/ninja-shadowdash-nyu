@@ -81,7 +81,7 @@ namespace shadowdash {
 
             for (const auto& input : inputs_) {
                 if (!std::filesystem::exists(std::string(input))) {
-                    throw std::runtime_error("Input file missing: " + std::string(input));
+                  return true;
                 }
                 if (std::filesystem::last_write_time(std::string(input)) > output_time) {
                     return true;
@@ -153,6 +153,42 @@ namespace shadowdash {
             return cmd.str();
         }
 
+        // finds a build given the output name
+        const Build* findBuildByOutput(std::string_view output) const {
+          for (const auto& build : builds_) {
+            if (build.output_ == output) {
+              return &build;
+            }
+          }
+          return nullptr;
+        }
+
+        void buildDependencies(const Build& build) const {
+          for (const auto& input : build.inputs_) {
+            std::cout << "Building dependency " << input << std::endl;
+            if (!std::filesystem::exists(std::string(input))) {
+                // try to find a build that produces this input, and execute the build
+                if (const Build* dep_build = findBuildByOutput(input)) {
+                    executeSingleBuild(*dep_build);
+                } else {
+                    throw std::runtime_error("Input file missing and no rule to build it: " + std::string(input));
+                }
+            }
+        }
+
+          // do same thing for implicit inputs
+          for (const auto& input : build.implicit_inputs_) {
+            if (!std::filesystem::exists(std::string(input))) {
+                // try to find a build that produces this input, and execute the build
+                if (const Build* dep_build = findBuildByOutput(input)) {
+                    executeSingleBuild(*dep_build);
+                } else {
+                    throw std::runtime_error("Implicit input file missing and no rule to build it: " + std::string(input));
+                }
+            }
+          }
+        }
+
     public:
         void defineRule(std::string_view name, Rule rule) {
             rules_.emplace(name, std::move(rule));
@@ -179,39 +215,65 @@ namespace shadowdash {
 
         void executeBuild() const {
             try {
-                for (const auto& build : builds_) {
-                    if (!build.needsRebuild()) {
-                        std::cout << "Skipping up-to-date target: " << build.output_ << "\n";
-                        continue;
+                // build everything if no defaults
+                if (defaults_.empty()) {
+                    for (const auto& build : builds_) {
+                        executeSingleBuild(build);
                     }
-
-                    if (build.is_phony_) {
-                        std::cout << "Executing phony target: " << build.output_ << "\n";
-                        continue;
-                    }
-
-                    std::cout << "Building: " << build.output_ << "\n";
-
-                    for (const auto& dep : build.implicit_inputs_) {
-                        if (!std::filesystem::exists(std::string(dep))) {
-                            throw std::runtime_error("Missing dependency: " + std::string(dep));
+                } else {
+                    // build only defaults
+                    for (const auto& default_target : defaults_) {
+                        bool found = false;
+                        for (const auto& build : builds_) {
+                            if (build.output_ == default_target) {
+                                executeSingleBuild(build);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            throw std::runtime_error("Default target not found: " + std::string(default_target));
                         }
                     }
-
-                    std::string command = constructCommand(build);
-                    std::cout << "Executing: " << command << "\n";
-
-                    if (int result = std::system(command.c_str()); result != 0) {
-                        throw std::runtime_error("Command failed with code " +
-                                                 std::to_string(result) + ": " + command);
-                    }
-                    std::cout << "\n";
                 }
             } catch (const std::exception& e) {
                 std::cerr << "Build failed: " << e.what() << "\n";
                 throw;
             }
         }
+
+        void executeSingleBuild(const Build& build) const {
+            if (!build.needsRebuild()) {
+                std::cout << "Skipping up-to-date target: " << build.output_ << "\n";
+                return;
+            }
+
+            if (build.is_phony_) {
+                std::cout << "Executing phony target: " << build.output_ << "\n";
+                return;
+            }
+
+            std::cout << "Building: " << build.output_ << "\n";
+
+            // build all its dependencies first
+            buildDependencies(build);
+
+            for (const auto& dep : build.implicit_inputs_) {
+                if (!std::filesystem::exists(std::string(dep))) {
+                    throw std::runtime_error("Missing dependency: " + std::string(dep));
+                }
+            }
+
+            std::string command = constructCommand(build);
+            std::cout << "Executing: " << command << "\n";
+
+            if (int result = std::system(command.c_str()); result != 0) {
+                throw std::runtime_error("Command failed with code " +
+                                        std::to_string(result) + ": " + command);
+            }
+            std::cout << "\n";
+        }
+
     };
 
     static constexpr auto in = "in";
