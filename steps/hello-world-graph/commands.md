@@ -38,3 +38,11 @@ g++ -fPIC -shared -I../../src ../../src/build_log.cc \
     ../../src/depfile_parser.cc \
     ../../src/version.cc -o libninja.so
 g++ -fPIC test1.cc -I../../src -L./ -lninja -Wl,-rpath=. -o test1
+
+### For debug
+g++ -g test1.cc -I../../src -L./ -lninja -Wl,-rpath=. -o test1
+gdb ./test1
+sharedlibrary libninja.so
+run
+backtrace
+break xx

@@ -1,15 +1,9 @@
-#include <chrono>
-#include <fstream>
 #include <iostream>
 #include <memory>
 
 #include "build.h"
-#include "build_log.h"
-#include "deps_log.h"
-#include "disk_interface.h"
 #include "graph.h"
 #include "state.h"
-#include "status.h"
 #include "util.h"
 using namespace std;
 
@@ -24,7 +18,7 @@ void CreateHelloWorldGraph(State* state) {
 
   // Create command
   EvalString command;
-  command.AddText("g++ -std=gnu++11 -MMD -MF ");
+  command.AddText("g++ -std=gnu++11 ");
   command.AddSpecial("$in");
   command.AddText(" -o ");
   command.AddSpecial("$out");
@@ -43,7 +37,7 @@ void CreateHelloWorldGraph(State* state) {
 
   // Add dependency format
   EvalString deps;
-  deps.AddText("g++");
+  deps.AddText("gcc");
   cxx_compiler->AddBinding("deps", deps);
 
   // Add rule to state
@@ -69,13 +63,9 @@ void CreateHelloWorldGraph(State* state) {
   Node* executable = state->GetNode("hello_world", 0);
 
   // Create edges
-  // cout << "Binding 'in': " << env.LookupVariable("in") << endl;
-  // cout << "Binding 'out': " << env.LookupVariable("out") << endl;
-  // cout << "Binding 'DEP_FILE': " << env.LookupVariable("DEP_FILE") << endl;
-  string error_message;
+  string error_message = "";
   string* err_ptr = &error_message;
   Edge* compile_edge = state->AddEdge(cxx_compiler);
-  compile_edge->env_ = &env;
   if (!state->AddOut(compile_edge, object_file->path(), 0, err_ptr)) {
     // Handle error
     *err_ptr = "Failed to add output to compile edge\n";
@@ -109,86 +99,29 @@ void CreateHelloWorldGraph(State* state) {
   }
 }
 
-void CreateLogFile(const string& path) {
-  ifstream infile(path);
-  if (!infile.good()) {
-    ofstream outfile(path);
-    if (outfile.is_open()) {
-      cout << "Log file created: " << path << endl;
-    } else {
-      cerr << "Failed to create log file: " << path << endl;
-    }
-  } else {
-    cout << "Log file already exists: " << path << endl;
-  }
-}
-
 void Error(const string& message) {
   cerr << "Error: " << message << endl;
 }
 
 int main() {
-  cout << "Build start" << endl;
-
   State state;
   // Create Graph
   CreateHelloWorldGraph(&state);
-
-  // Config with Verbose output and 1 process
-  BuildConfig config;
-  config.verbosity = config.VERBOSE;
-  config.parallelism = 1;  // 1 process
-
-  BuildLog build_log;
-  DepsLog deps_log;
-  RealDiskInterface disk_interface;
-  Status* status = Status::factory(config);
-
-  // Create log file
-  const string log_path = "build_log";
-  string build_message;
-  CreateLogFile(log_path);
-  const string deps_path = "deps_log";
-  string deps_message;
-  CreateLogFile(deps_path);
-
-  if (!build_log.Load(log_path, &build_message)) {
-    Error("Failed to load build log");
-    delete status;
-    return 1;
-  }
-
-  if (!deps_log.Load(deps_path, &state, &deps_message)) {
-    Error("Failed to load dependencies log");
-    delete status;
-    return 1;
-  }
-
-  // Get currrent timestamp（ms）
-  int64_t start_time_millis =
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count();
-
   // Create the Builder object
-  Builder builder(&state, config, &build_log, &deps_log, &disk_interface,
-                  status, start_time_millis);
+  Builder builder(&state);
 
   string err;
   if (!builder.AddTarget("hello_world", &err)) {
     Error("Failed to add build target: " + err);
-    delete status;
     return 1;
   }
 
   if (!builder.Build(&err)) {
     Error("Build failed: " + err);
-    delete status;
     return 1;
   }
 
-  cout << "Build completed" << endl;
-
-  delete status;
+  cout << "Build completed successfully!" << std::endl;
+  return 0;
   return 0;
 }
