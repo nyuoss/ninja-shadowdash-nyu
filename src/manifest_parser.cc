@@ -258,6 +258,10 @@ bool ManifestParser::ParseDefault(string* err) {
     if (!state_->AddDefault(path, &default_err))
       return lexer_.Error(default_err, err);
 
+// add to converter output for each default: default(str("hello"));
+    g_output_ss << "\ndefault(str(\"";
+    g_output_ss << path << "\"));\n";
+
     eval.Clear();
     if (!lexer_.ReadPath(&eval, err))
       return false;
