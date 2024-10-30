@@ -366,6 +366,8 @@ bool ManifestParser::ParseEdge(string* err) {
   // Bindings on edges are rare, so allocate per-edge envs only when needed.
   bool has_indent_token = lexer_.PeekToken(Lexer::INDENT);
   BindingEnv* env = has_indent_token ? new BindingEnv(env_) : env_;
+  
+  std::map<std::string, std::string> savedBindings;
   while (has_indent_token) {
     string key;
     EvalString val;
@@ -373,6 +375,10 @@ bool ManifestParser::ParseEdge(string* err) {
       return false;
 
     env->AddBinding(key, val.Evaluate(env_));
+
+    // mr: save bindings for adding later
+    savedBindings[key] = val.Evaluate(env_);
+
     has_indent_token = lexer_.PeekToken(Lexer::INDENT);
   }
 
@@ -467,6 +473,30 @@ bool ManifestParser::ParseEdge(string* err) {
     }
     assert(!edge->dyndep_->generated_by_dep_loader());
   }
+    
+    // add edge here to the stringstream
+	g_output_ss << "\n\nbuild(";
+    
+    g_output_ss << "list{ str{ ";
+    g_output_ss << "\"" << outs[0].Evaluate(env) << "\""; // todo: make this a loop
+    g_output_ss << " } },\n";
+    
+    g_output_ss << "\t{},\n";
+ 
+    g_output_ss << "\t" << rule->name_ << ",\n";
+    
+    g_output_ss << "\tlist{ str{ ";
+    g_output_ss << "\"" << ins[0].Evaluate(env) << "\""; // todo: make this a loop
+    g_output_ss << " } },\n";
+
+    g_output_ss << "\t{},\n";
+    g_output_ss << "\t{},\n";
+
+    for (const auto& pair : savedBindings) {
+        g_output_ss << "\t{ bind(" << pair.first << ", \"" << pair.second << "\") }\n";
+    }
+    
+    g_output_ss << ");\n";
 
   return true;
 }
