@@ -47,6 +47,10 @@ Token Token::createFlagToken(const std::string& flag, int line, int column) {
     return Token(TokenType::FLAG, flag, flag, line, column);
 }
 
+Token Token::createCommentToken(const std::string& comment, int line, int column) {
+    return Token(TokenType::COMMENT, comment, comment, line, column);
+}
+
 bool Token::isKeyword() const {
     return keywords.find(lexeme_) != keywords.end();
 }

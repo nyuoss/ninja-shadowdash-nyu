@@ -12,8 +12,9 @@ public:
 private:
    Token nextToken();
    void skipWhitespace();
-   Token scanIdentifier();
-   Token scanPath();
+   Token scanIdentifierOrPath(); // Updated method name
+   Token scanComment();
+   Token scanOperator(char firstChar); // Add this line
    
    bool isAtEnd() const;
    char advance(); 

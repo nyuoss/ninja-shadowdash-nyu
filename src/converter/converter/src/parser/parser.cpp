@@ -2,6 +2,7 @@
 #include "parser/parser.hpp"
 #include "lexer/token.hpp"
 #include <stdexcept>
+#include <iostream> // Add this line for debugging output
 
 Token Parser::peek() const {
     if (isAtEnd()) return Token(TokenType::EOF_TOKEN, "");
@@ -31,18 +32,26 @@ void Parser::parseVariable(std::map<std::string, std::string>& variables) {
                                std::to_string(name.line()));
     }
     
+    std::cout << "Variable name: " << name.lexeme() << " at line " << name.line() << std::endl; // Debugging output
+    
     if (!match(TokenType::EQUALS)) {
+        std::cout << "Next token type: " << static_cast<int>(peek().type()) << " lexeme: " << peek().lexeme() << std::endl; // Debugging output
         throw std::runtime_error("Expected '=' after variable name at line " + 
                                std::to_string(name.line()));
     }
     
-    Token value = advance(); // Variable value
-    if (value.type() != TokenType::STRING && value.type() != TokenType::IDENTIFIER) {
-        throw std::runtime_error("Expected variable value at line " + 
-                               std::to_string(value.line()));
+    // Collect all tokens until NEWLINE as the variable value
+    std::string valueString;
+    while (!isAtEnd() && peek().type() != TokenType::NEWLINE) {
+        Token valueToken = advance();
+        valueString += valueToken.lexeme();
+        if (!isAtEnd() && peek().type() != TokenType::NEWLINE) {
+            valueString += ' '; // Add a space between tokens
+        }
     }
     
-    variables[name.lexeme()] = value.lexeme();
+    std::cout << "Variable value: " << valueString << std::endl; // Debugging output
+    variables[name.lexeme()] = valueString;
 }
 
 void Parser::parseRule() {
@@ -55,12 +64,14 @@ void Parser::parseRule() {
     Rule rule;
     rule.name = name.lexeme();
     
-    // Parse rule body (must be indented)
-    while (!isAtEnd() && peek().type() == TokenType::INDENT) {
-        advance(); // consume indent
-        
-        if (peek().type() == TokenType::IDENTIFIER && 
-            peek().lexeme() == "command") {
+    // Consume any NEWLINES
+    while (!isAtEnd() && peek().type() == TokenType::NEWLINE) {
+        advance(); // consume newline
+    }
+    
+    // Parse rule body
+    while (!isAtEnd() && (peek().type() == TokenType::IDENTIFIER || peek().type() == TokenType::COMMAND)) {
+        if (peek().lexeme() == "command" || peek().type() == TokenType::COMMAND) {
             advance(); // consume "command"
             
             if (!match(TokenType::EQUALS)) {
@@ -68,13 +79,18 @@ void Parser::parseRule() {
                                        std::to_string(peek().line()));
             }
             
-            Token command = advance();
-            if (command.type() != TokenType::STRING) {
-                throw std::runtime_error("Expected command string at line " + 
-                                       std::to_string(command.line()));
+            // Collect all tokens until NEWLINE as the command value
+            std::string commandString;
+            while (!isAtEnd() && peek().type() != TokenType::NEWLINE) {
+                Token commandToken = advance();
+                commandString += commandToken.lexeme();
+                if (!isAtEnd() && peek().type() != TokenType::NEWLINE) {
+                    commandString += ' '; // Add a space between tokens
+                }
             }
             
-            rule.command = command.lexeme();
+            std::cout << "Command string: " << commandString << std::endl; // Debugging output
+            rule.command = commandString;
         } else {
             parseVariable(rule.variables);
         }
@@ -93,7 +109,7 @@ void Parser::parseBuild() {
     
     // Parse output file
     Token output = advance();
-    if (output.type() != TokenType::STRING) {
+    if (output.type() != TokenType::PATH && output.type() != TokenType::IDENTIFIER) {
         throw std::runtime_error("Expected output file at line " + 
                                std::to_string(output.line()));
     }
@@ -113,13 +129,16 @@ void Parser::parseBuild() {
     target.ruleName = ruleName.lexeme();
     
     // Parse input files
-    while (!isAtEnd() && peek().type() == TokenType::STRING) {
+    while (!isAtEnd() && (peek().type() == TokenType::PATH || peek().type() == TokenType::IDENTIFIER)) {
         target.inputs.push_back(advance().lexeme());
     }
     
     // Parse variables (if any)
-    while (!isAtEnd() && peek().type() == TokenType::INDENT) {
-        advance(); // consume indent
+    while (!isAtEnd() && peek().type() == TokenType::NEWLINE) {
+        advance(); // consume newline
+    }
+    
+    while (!isAtEnd() && peek().type() == TokenType::IDENTIFIER) {
         parseVariable(target.variables);
         
         if (!match(TokenType::NEWLINE)) {
@@ -132,7 +151,7 @@ void Parser::parseBuild() {
 }
 
 void Parser::parseDefault() {
-    while (!isAtEnd() && peek().type() == TokenType::STRING) {
+    while (!isAtEnd() && (peek().type() == TokenType::IDENTIFIER || peek().type() == TokenType::PATH)) {
         buildFile.defaults.push_back(advance().lexeme());
     }
     
@@ -151,18 +170,22 @@ BuildFile Parser::parse() {
             continue;
         }
         
-        if (token.type() == TokenType::IDENTIFIER) {
-            if (token.lexeme() == "rule") {
-                parseRule();
-            } else if (token.lexeme() == "build") {
-                parseBuild();
-            } else if (token.lexeme() == "default") {
-                parseDefault();
-            } else {
-                parseVariable(buildFile.globalVariables);
-            }
+        if (token.type() == TokenType::RULE) {
+            advance(); // consume 'rule' token
+            parseRule();
+        } else if (token.type() == TokenType::BUILD) {
+            advance(); // consume 'build' token
+            parseBuild();
+        } else if (token.type() == TokenType::DEFAULT) {
+            advance(); // consume 'default' token
+            parseDefault();
+        } else if (token.type() == TokenType::IDENTIFIER) {
+            parseVariable(buildFile.globalVariables);
+        } else if (token.type() == TokenType::COMMENT) {
+            advance(); // Skip comments
         } else {
-            throw std::runtime_error("Unexpected token at line " + 
+            std::cout << "Unexpected token type: " << static_cast<int>(token.type()) << " lexeme: " << token.lexeme() << std::endl; // Debugging output
+            throw std::runtime_error("Unexpected token at line " +
                                    std::to_string(token.line()));
         }
     }

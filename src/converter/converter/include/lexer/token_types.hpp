@@ -2,7 +2,7 @@
 #pragma once
 
 enum class TokenType {
-    // Keywords/Commands
+    // Keywords
     RULE,       // 'rule'
     BUILD,      // 'build'
     DEFAULT,    // 'default'
@@ -36,6 +36,8 @@ enum class TokenType {
     IN,         // $in
     OUT,        // $out
 
-	//Invalid
-	INVALID
+    COMMENT,    // Comments starting with #
+
+    // Invalid
+    INVALID
 };

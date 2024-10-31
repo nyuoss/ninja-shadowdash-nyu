@@ -23,6 +23,9 @@ struct Rule {
     std::string expandCommand(const std::map<std::string, std::string>& globalVars,
                             const std::string& in,
                             const std::string& out) const;
+
+    // Returns string representation of the rule
+    std::string toString() const;
 };
 
 struct BuildTarget {
@@ -33,6 +36,9 @@ struct BuildTarget {
 
     // Returns the expanded command string for this build target
     std::string getExpandedCommand(const BuildFile& buildFile) const;
+
+    // Returns string representation of the build target
+    std::string toString() const;
 };
 
 struct BuildFile {
@@ -40,4 +46,10 @@ struct BuildFile {
     std::map<std::string, Rule> rules;
     std::vector<BuildTarget> buildTargets;
     std::vector<std::string> defaults;
+
+    // Returns string representation of the entire build file
+    std::string toString() const;
+
+    // Generates code representation of the build file
+    std::string toCodeString() const;
 };

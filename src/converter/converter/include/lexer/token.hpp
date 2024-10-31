@@ -28,6 +28,7 @@ public:
     static Token createVariableToken(const std::string& name, int line, int column);
     static Token createPathToken(const std::string& path, int line, int column);
     static Token createFlagToken(const std::string& flag, int line, int column);
+    static Token createCommentToken(const std::string& comment, int line, int column);
 
     // Getters
     TokenType type() const { return type_; }
