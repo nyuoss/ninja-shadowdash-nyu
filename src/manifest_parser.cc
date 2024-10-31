@@ -69,6 +69,13 @@ bool ManifestParser::Parse(const string& filename, const string& input,
       if (name == "ninja_required_version")
         CheckNinjaVersion(value);
       env_->AddBinding(name, value);
+
+      // handle conversion of let
+      g_output_ss << "\nlet(";
+      g_output_ss << name;
+      g_output_ss << ", \"";
+      g_output_ss << value; // parent function gets value this way
+      g_output_ss << "\");\n";
       break;
     }
     case Lexer::INCLUDE:
@@ -230,13 +237,6 @@ bool ManifestParser::ParseLet(string* key, EvalString* value, string* err) {
     return false;
   if (!lexer_.ReadVarValue(value, err))
     return false;
-
-  // handle conversion of let
-  g_output_ss << "\nlet(";
-  g_output_ss << *key;
-  g_output_ss << ", \"";
-  g_output_ss << value->Evaluate(env_); // parent function gets value this way
-  g_output_ss << "\");";
 
   return true;
 }
@@ -479,7 +479,7 @@ bool ManifestParser::ParseEdge(string* err) {
   }
     
     // add edge here to the stringstream
-	g_output_ss << "\n\nbuild(";
+	g_output_ss << "\nbuild(";
     
     g_output_ss << "list{ str{ ";
     g_output_ss << "\"" << outs[0].Evaluate(env) << "\""; // todo: make this a loop
