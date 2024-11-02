@@ -71,7 +71,7 @@ bool ManifestParser::Parse(const string& filename, const string& input,
       env_->AddBinding(name, value);
 
       // handle conversion of let
-      g_output_ss << "\nlet(";
+      g_output_ss << "\n\tlet(";
       g_output_ss << name;
       g_output_ss << ", \"";
       g_output_ss << value; // parent function gets value this way
@@ -213,9 +213,9 @@ bool ManifestParser::ParseRule(string* err) {
 
   env_->AddRule(rule);
     // add rule here to the stringstream
-	g_output_ss << "\nauto " << rule->name_ << " = rule{ {\n"
+	g_output_ss << "\n\tauto " << rule->name_ << " = rule{ {\n"
 		<< "    ";
-	g_output_ss << "bind(command, ";
+	g_output_ss << "\tbind(command, ";
 
 	std::vector<std::string> tokens = split_by_spaces(rule->bindings_.at("command").Unparse());
 
@@ -225,7 +225,7 @@ bool ManifestParser::ParseRule(string* err) {
             g_output_ss << ",";
         }
     }
-	g_output_ss << ")\n" << "} };\n";
+	g_output_ss << ")\n" << "\t} };\n";
 
   return true;
 }
@@ -259,7 +259,7 @@ bool ManifestParser::ParseDefault(string* err) {
       return lexer_.Error(default_err, err);
 
 // add to converter output for each default: default(str("hello"));
-    g_output_ss << "\ndefault(str(\"";
+    g_output_ss << "\n\tdefault(str(\"";
     g_output_ss << path << "\"));\n";
 
     eval.Clear();
@@ -479,28 +479,28 @@ bool ManifestParser::ParseEdge(string* err) {
   }
     
     // add edge here to the stringstream
-	g_output_ss << "\nbuild(";
+	g_output_ss << "\n\tbuild(";
     
     g_output_ss << "list{ str{ ";
     g_output_ss << "\"" << outs[0].Evaluate(env) << "\""; // todo: make this a loop
     g_output_ss << " } },\n";
     
-    g_output_ss << "\t{},\n";
+    g_output_ss << "\t\t{},\n";
  
-    g_output_ss << "\t" << rule->name_ << ",\n";
+    g_output_ss << "\t\t" << rule->name_ << ",\n";
     
-    g_output_ss << "\tlist{ str{ ";
+    g_output_ss << "\t\tlist{ str{ ";
     g_output_ss << "\"" << ins[0].Evaluate(env) << "\""; // todo: make this a loop
     g_output_ss << " } },\n";
 
-    g_output_ss << "\t{},\n";
-    g_output_ss << "\t{},\n";
+    g_output_ss << "\t\t{},\n";
+    g_output_ss << "\t\t{},\n";
 
     for (const auto& pair : savedBindings) {
-        g_output_ss << "\t{ bind(" << pair.first << ", \"" << pair.second << "\") }\n";
+        g_output_ss << "\t\t{ bind(" << pair.first << ", \"" << pair.second << "\") }\n";
     }
     
-    g_output_ss << ");\n";
+    g_output_ss << "\t);\n";
 
   return true;
 }
