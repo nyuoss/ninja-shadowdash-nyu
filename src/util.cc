@@ -62,6 +62,7 @@
 
 // my globals
 std::stringstream g_output_ss;
+int g_build_count = 1;
 
 using namespace std;
 

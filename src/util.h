@@ -51,6 +51,7 @@ NORETURN void Fatal(const char* msg, ...);
 // my globals
 #include <sstream>
 extern std::stringstream g_output_ss;
+extern int g_build_count;
 
 /// Log a warning message.
 void Warning(const char* msg, ...);

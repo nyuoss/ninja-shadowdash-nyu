@@ -1570,7 +1570,18 @@ NORETURN void real_main(int argc, char** argv) {
   // add preamble
   g_output_ss << "#include \"manifest.h\"\n\n";
   g_output_ss << "using namespace shadowdash;\n\n";
-  g_output_ss << "void manifest() {\n"; // start manifest() function
+
+/* for later
+  g_output_ss << "\
+Token operator\"\" _l(const char* value, std::size_t len) {\n\
+    return Token(Token::Type::LITERAL, std::string(value, len));\n\
+}\n\n\
+Token operator\"\" _v(const char* value, std::size_t len) {\n\
+    return Token(Token::Type::VAR, std::string(value, len));\n\
+}\n\n";
+*/
+  g_output_ss << "extern \"C\" {\n";
+  g_output_ss << "\tbuildGroup manifest() {\n"; // start manifest() function
   
  /*
   // Limit number of rebuilds, to prevent infinite loops.
@@ -1591,8 +1602,18 @@ NORETURN void real_main(int argc, char** argv) {
       status->Error("%s", err.c_str());
       exit(1);
     }
-    
-    g_output_ss << "\n}"; // exit manifest() function
+  
+    g_output_ss << "return buildGroup({";
+    for(int i=1; i<g_build_count; i++)
+    {
+        g_output_ss << "build" << i;
+        if (i!=g_build_count-1)
+        {
+            g_output_ss << ", ";
+        }
+    }
+    g_output_ss << "});";
+    g_output_ss << "\n}}"; // exit manifest() function
    
     std::string result = g_output_ss.str();
     std::cout << result << std::endl; // write to stdout for now, change it to write to file later
