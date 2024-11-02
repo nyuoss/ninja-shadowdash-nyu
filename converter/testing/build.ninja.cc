@@ -3,6 +3,7 @@
 using namespace shadowdash;
 
 void manifest() {
+  
   let(flags, "-O3");
 
   auto compile = rule{ {
