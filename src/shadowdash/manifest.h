@@ -8,11 +8,10 @@
 namespace shadowdash {
 
 class Token {
- public:
+public:
   enum Type { LITERAL, VAR};
 
-  constexpr Token(Type type, std::string_view value)
-      : type_(type), value_(value) {}
+  constexpr Token(Type type, std::string_view value) : type_(type), value_(value) {}
 
   constexpr Token(std::string_view value) : Token(Token::LITERAL, value) {}
 
@@ -31,7 +30,7 @@ constexpr Token operator"" _v(const char* value, std::size_t len) {
 }
 
 class str {
- public:
+public:
   str(std::initializer_list<Token> tokens) : tokens_(tokens) {}
   std::initializer_list<Token> tokens_;
 };
@@ -40,7 +39,7 @@ using binding = std::pair<std::string_view, str>;
 using map = std::initializer_list<binding>;
 
 class list {
- public:
+public:
   list(std::initializer_list<str> values) : values_(values) {}
   constexpr size_t size() const {return values_.size();}
   str operator[] (size_t i) const {return *(values_.begin() + i);}
@@ -49,44 +48,44 @@ class list {
 };
 
 class var {
- public:
+public:
   var(const char* name, str value) {}
 };
 
 class rule {
- public:
+public:
   rule(map bindings) {}
 };
 
 class pool_ {
-  public:
-   pool_(binding depth){}
+public:
+  pool_(binding depth){}
 };
 
 class build {
 public:
-   build(
-       list outputs,
-       list implicit_outputs,
-       rule& rule,
-       list inputs,
-       list implicit_inputs,
-       list order_only_inputs,
-       map bindings
-   ){}
+  build(
+    list outputs,
+    list implicit_outputs,
+    rule& rule,
+    list inputs,
+    list implicit_inputs,
+    list order_only_inputs,
+    map bindings
+  ){}
 };
 
 class default_{
-  public:
-    default_(list addedList){
-      for (size_t i = 0; i < addedList.size(); i++) targets.push_back(addedList[i]);
-    }
-    
-    default_(str addedTarget) {
-      targets.push_back(addedTarget);
-    }
+public:
+  default_(list addedList){
+    for (size_t i = 0; i < addedList.size(); i++) targets.push_back(addedList[i]);
+  }
 
-    static std::vector<str> targets;
+  default_(str addedTarget) {
+    targets.push_back(addedTarget);
+  }
+
+  static std::vector<str> targets;
 };
 
 std::vector<str> default_::targets;
@@ -94,9 +93,9 @@ std::vector<str> default_::targets;
 static constexpr auto in = "in"_v;
 static constexpr auto out = "out"_v;
 static auto phony = rule{{}};
-static auto console_pool = pool_(binding("depth", str{ {"1"} }));
+static auto console = pool_(binding("depth", str{ {"1"} }));
 
-} 
+}
 
 #define let(name, ...) \
   var name {           \
