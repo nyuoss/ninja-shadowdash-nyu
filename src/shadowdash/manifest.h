@@ -86,16 +86,17 @@ class default_{
       targets.push_back(addedTarget);
     }
 
-
-static std::vector<str> targets;
+    static std::vector<str> targets;
 };
+
+std::vector<str> default_::targets;
 
 static constexpr auto in = "in"_v;
 static constexpr auto out = "out"_v;
 static auto phony = rule{{}};
-static auto console_pool = pool_(bind(depth, "1"));
+static auto console_pool = pool_(binding("depth", str{ {"1"} }));
 
-}  // namespace shadowdash
+} 
 
 #define let(name, ...) \
   var name {           \
