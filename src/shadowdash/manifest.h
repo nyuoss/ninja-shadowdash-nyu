@@ -3,12 +3,13 @@
 #include <initializer_list>
 #include <string_view>
 #include <string>
+#include <vector>
 
 namespace shadowdash {
 
 class Token {
  public:
-  enum Type { LITERAL, VAR, POOL};
+  enum Type { LITERAL, VAR};
 
   constexpr Token(Type type, std::string_view value)
       : type_(type), value_(value) {}
@@ -29,10 +30,6 @@ constexpr Token operator"" _v(const char* value, std::size_t len) {
   return Token(Token::Type::VAR, { value, len });
 }
 
-constexpr Token operator"" _p(const char* value, std::size_t len) {
-  return Token(Token::Type::POOL, { value, len });
-}
-
 class str {
  public:
   str(std::initializer_list<Token> tokens) : tokens_(tokens) {}
@@ -45,6 +42,9 @@ using map = std::initializer_list<binding>;
 class list {
  public:
   list(std::initializer_list<str> values) : values_(values) {}
+  constexpr size_t size() const {return values_.size();}
+  str operator[] (size_t i) const {return *(values_.begin() + i);}
+
   std::initializer_list<str> values_;
 };
 
@@ -60,7 +60,7 @@ class rule {
 
 class pool_ {
   public:
-   pool_(int depth){}
+   pool_(binding depth){}
 };
 
 class build {
@@ -78,11 +78,22 @@ public:
 
 class default_{
   public:
-    default_(list target){}
+    default_(list addedList){
+      for (size_t i = 0; i < addedList.size(); i++) targets.push_back(addedList[i]);
+    }
+    
+    default_(str addedTarget) {
+      targets.push_back(addedTarget);
+    }
+
+
+static std::vector<str> targets;
 };
 
 static constexpr auto in = "in"_v;
 static constexpr auto out = "out"_v;
+static auto phony = rule{{}};
+static auto console_pool = pool_(bind(depth, "1"));
 
 }  // namespace shadowdash
 
