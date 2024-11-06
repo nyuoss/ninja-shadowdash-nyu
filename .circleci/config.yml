@@ -1,35 +1,49 @@
 version: 2.1
-jobs:
-  build-test:
+executors:
+  docker-executor:
     docker:
       - image: cimg/base:current
+jobs:
+  build:
+    executor: docker-executor
     steps:
-      # Checkout the code as the first step.
       - checkout
       - run:
-          name: InstallPreq
-          command: | 
-            echo "Installing clang-tidy"
-            sudo apt-get update && sudo apt-get install -y clang-tidy
-            echo "Installed"
+          name: Installing Dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y clang-tidy
       - run:
-          name: Build
-          command: | 
-            echo "Building"
-            mkdir build && cd build
-            cmake -S ..
-            make -j $(nproc)
-            cd ../
-            echo "Built"
+          name: Building Project
+          command: |
+            cmake -B cicd-build
+            cmake --build cicd-build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cicd-build
+  test:
+    executor: docker-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
       - run:
-          name: Test
-          command: | 
-            echo "Start Testing"
-            cd build
-            ctest
-            echo "Testing Done"
-
+          name: Run Tests
+          command: |
+            ./cicd-build/ninja_test
+            ./cicd-build/build_log_perftest
+            ./cicd-build/canon_perftest
+            ./cicd-build/clparser_perftest
+            ./cicd-build/depfile_parser_perftest
+            ./cicd-build/elide_middle_perftest
+            ./cicd-build/hash_collision_bench
+            ./cicd-build/manifest_parser_perftest
 workflows:
-  build-test-workflow: 
+  version: 2
+  build_and_test:
     jobs:
-      - build-test
+      - build
+      - test:
+          requires:
+            - build
