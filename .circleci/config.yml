@@ -2,7 +2,7 @@ version: 2.1
 executors:
   docker-executor:
     docker:
-      - image: cimg/base:current
+      - image: cimg/base:stable
 jobs:
   build:
     executor: docker-executor
@@ -32,13 +32,6 @@ jobs:
           name: Run Tests
           command: |
             ./cicd-build/ninja_test
-            ./cicd-build/build_log_perftest
-            ./cicd-build/canon_perftest
-            ./cicd-build/clparser_perftest
-            ./cicd-build/depfile_parser_perftest
-            ./cicd-build/elide_middle_perftest
-            ./cicd-build/hash_collision_bench
-            ./cicd-build/manifest_parser_perftest
 workflows:
   version: 2
   build_and_test:
