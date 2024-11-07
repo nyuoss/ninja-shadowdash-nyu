@@ -3,6 +3,7 @@
 int main() {
 
     shadowdash::ShadowDash shadowDash;
+    POOL("compile", 4);
 
     BUILDDIR("build");
 
@@ -16,14 +17,19 @@ int main() {
          shadowdash::constant("*.o", 3),
          shadowdash::constant("main", 4)
     );
-    RULE(cc,
-         shadowdash::constant("g++", 3),
-         shadowdash::variable("cflags", 6),
-         shadowdash::constant("-c", 2),
-         shadowdash::variable(shadowdash::in, 2),
-         shadowdash::constant("-o", 2),
-         shadowdash::variable(shadowdash::out, 3)
+    RULE_WITH_POOL(cc,
+         {
+             shadowdash::constant("g++", 3),
+             shadowdash::variable("cflags", 6),
+             shadowdash::constant("-c", 2),
+             shadowdash::variable(shadowdash::in, 2),
+             shadowdash::constant("-o", 2),
+             shadowdash::variable(shadowdash::out, 3)
+         },
+         "compile",  // pool name
+         2          // number of jobs
     );
+
 
     RULE(link,
          shadowdash::constant("g++", 3),
@@ -39,7 +45,7 @@ int main() {
     BUILD("main", "link", {"foo.o", "bar.o", "baz.o"});
 
 
-    DEFAULT("clean");
+    DEFAULT("main");
 
     shadowDash.executeBuild();
 

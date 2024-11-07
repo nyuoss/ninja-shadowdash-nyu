@@ -9,6 +9,8 @@
 #include <chrono>
 #include <sstream>
 #include <stdexcept>
+#include <atomic>
+#include <thread>
 
 namespace shadowdash {
 
@@ -38,9 +40,52 @@ namespace shadowdash {
         std::vector<Expression> parts_;
     };
 
+    class Pool {
+    public:
+        Pool(std::string name, int depth) 
+            : name_(std::move(name)), depth_(depth), current_jobs_(0) {}
+        
+        Pool(const Pool& other)
+            : name_(other.name_), depth_(other.depth_), current_jobs_(0) {}
+        
+        Pool& operator=(const Pool& other) {
+            if (this != &other) {
+                name_ = other.name_;
+                depth_ = other.depth_;
+                current_jobs_ = 0;
+            }
+            return *this;
+        }
+
+        bool canStartJob() const {
+            return current_jobs_ < depth_;
+        }
+
+        void startJob() {
+            if (!canStartJob()) {
+                throw std::runtime_error("Pool " + name_ + " is full");
+            }
+            current_jobs_++;
+        }
+
+        void finishJob() {
+            if (current_jobs_ > 0) {
+                current_jobs_--;
+            }
+        }
+
+    private:
+        std::string name_;
+        int depth_;
+        std::atomic<int> current_jobs_;
+    };
+
     class Rule {
     public:
         Rule(Command command) : command_(std::move(command)) {}
+
+        Rule(Command command, std::string_view pool, int jobs = 1) 
+        : command_(std::move(command)), pool_(pool), jobs_(jobs) {}
 
         Command command_;
         std::optional<std::string_view> description_;
@@ -107,6 +152,8 @@ namespace shadowdash {
         std::unordered_map<std::string_view, std::string_view> variables_;
         std::vector<std::string_view> defaults_;
         std::optional<std::string_view> builddir_;
+        std::unordered_map<std::string, Pool> pools_;
+
 
         std::string resolveVariable(const std::string_view& var, const Build& build) const {
             try {
@@ -202,6 +249,10 @@ namespace shadowdash {
             variables_[name] = value;
         }
 
+        void definePool(std::string name, int depth) {
+            pools_.emplace(name, Pool(name, depth));
+        }
+
         void addDefault(std::string_view target) {
             defaults_.push_back(target);
         }
@@ -262,9 +313,37 @@ namespace shadowdash {
             std::string command = constructCommand(build);
             std::cout << "Executing: " << command << "\n";
 
-            if (int result = std::system(command.c_str()); result != 0) {
-                throw std::runtime_error("Command failed with code " +
-                                        std::to_string(result) + ": " + command);
+            // Get the rule and check for pool
+            const auto& rule = rules_.at(build.rule_);
+            Pool* pool = nullptr;
+            if (rule.pool_) {
+                auto pool_it = pools_.find(std::string(*rule.pool_));
+                if (pool_it == pools_.end()) {
+                    throw std::runtime_error("Unknown pool: " + std::string(*rule.pool_));
+                }
+                pool = const_cast<Pool*>(&pool_it->second);
+                
+                // Wait until we can acquire a slot in the pool
+                while (!pool->canStartJob()) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
+                pool->startJob();
+            }
+
+            try {
+                if (int result = std::system(command.c_str()); result != 0) {
+                    throw std::runtime_error("Command failed with code " +
+                                            std::to_string(result) + ": " + command);
+                }
+            } catch (...) {
+                if (pool) {
+                    pool->finishJob();
+                }
+                throw;
+            }
+
+            if (pool) {
+                pool->finishJob();
             }
             std::cout << "\n";
         }
@@ -276,10 +355,21 @@ namespace shadowdash {
 
 } // namespace shadowdash
 
+// #define RULE(name, ...) \
+//     shadowDash.defineRule(#name, shadowdash::Rule{ \
+//         shadowdash::Command{ __VA_ARGS__ } \
+//     })
+
 #define RULE(name, ...) \
     shadowDash.defineRule(#name, shadowdash::Rule{ \
         shadowdash::Command{ __VA_ARGS__ } \
     })
+
+#define RULE_WITH_POOL(name, cmd, pool, ...) \
+    shadowDash.defineRule(#name, shadowdash::Rule{ \
+        cmd, pool, ##__VA_ARGS__ \
+    })
+    
 
 #define BUILD(...) \
     shadowDash.defineBuild(shadowdash::Build{ __VA_ARGS__ })
@@ -295,3 +385,6 @@ namespace shadowdash {
 
 #define PHONY(name, rule, ...) \
     shadowDash.defineBuild(shadowdash::Build{#name, rule, {__VA_ARGS__}, {}, {}, {}, true})
+
+#define POOL(name, depth) \
+    shadowDash.definePool(name, depth)
