@@ -20,14 +20,19 @@ jobs:
           command: |
             cp .clang-tidy /tmp/.clang-tidy
       - run:
-          name: Run clang-tidy, build ninja and run ctest
+          name: Run clang-tidy, build ninja 
           command: |
               mkdir build
               cd build
               cmake ..
-              cmake --build .
               make
-              ctest
+      - run:
+          name: Run tests
+          command: |
+              cd build
+              ctest --output-junit results.xml
+      - store_test_results:
+              path: build
 
 
 # Orchestrate jobs using workflows
