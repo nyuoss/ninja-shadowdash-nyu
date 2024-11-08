@@ -5,75 +5,62 @@ using namespace shadowdash;
 
 extern "C" {
 	buildGroup manifest() {
-		let(flags, {"-O3"});
-
-		char test[] = "hello.o";
-
-		auto compile = rule{{
-			bind(command, {"g++", "flags"_v, "-c", in, "-o", out}),
+		std::cout << "manifest start" << std::endl;
+		static auto compile = rule{{
+			bind(command, {"g++", " ", "-c", " ", in, " ", "-o", " ", out, " ", "-MD", " ", "-MF", " ", "depfile"_v}),
+			bind(depfile, {out, ".d"}),
+			bind(deps, {"gcc"})
 		}};
+		std::cout << "compile rule done" << std::endl;
 
-		auto link = rule({
-			bind(command, {"g++", in, "-o", out}),
-		});
+		static auto link = rule{{
+			bind(command, {"g++", " ", in, " ", "-o", " ", out}),
+		}};
+		std::cout << "link rule done" << std::endl;
 
-		// std::cout << "creating mystr" << std::endl;
-		// auto mystr = str {{test}};
-		
-		// for (const shadowdash::Token& token: mystr.tokens_) {
-		// 	std::cout << "token: " << token.value_ << std::endl;
-		// }
-
-		// std::cout << "creating mylist" << std::endl;
-		// auto mylist = list{ {mystr} };
-		// std::cout << "creating build1" << std::endl;
-
-		auto build1 = build(list{ {str {{"hello.o"}}} },
+		static auto build1 = build(list{ {str {{"hello.o"}}} },
 			list{{}},
 			compile,
 			list{ {str{{"hello.cc"}}} },
 			list{{}},
 			list{{}},
-			{ bind(flags, {"-O2"}) }
+			{  }
 		);
+		std::cout << "build1 done" << std::endl;
 
-		// auto build2 = build(list{ str{ "hello" } },
-		// 	{},
-		// 	link,
-		// 	list{ str{"hello.o"} },
-		// 	{},
-		// 	{},
-		// 	{}
-		// );
-		
-		auto build2 = build(list{ {str {{"hello"}}} },
+		static auto build2 = build(list{ {str {{"hello"}}} },
 			list{{}},
 			link,
 			list{ {str{{"hello.o"}}} },
 			list{{}},
 			list{{}},
-			{ bind(flags, {"-O2"}) }
+			{  }
 		);
+		std::cout << "build2 done" << std::endl;
 
-		// std::cout << "???" << std::endl;
-		// std::cout << build1.outputs_ << std::endl;
-		// std::cout << build1.inputs_ << std::endl;
-		
-        // for(const shadowdash::str& str : build1.outputs_.values_) {
-        //     std::cout << "outputs" << std::endl;
-        //     for (const shadowdash::Token& token: str.tokens_) {
-        //         std::cout << "token: " << token.value_ << std::endl;
-        //     }
-        // }
-        // for(const shadowdash::str& str : build1.inputs_.values_) {
-        //     std::cout << "inputs" << std::endl;
-        //     for (const shadowdash::Token& token: str.tokens_) {
-        //         std::cout << "token: " << token << std::endl;
-        //     }
-        // }
-		
-		// std::cout << "????" << std::endl;
+		static auto build3 = build(list{ {str {{"hello.d"}}} },
+			list{{}},
+			rule::phony,
+			list{{}},
+			list{{}},
+			list{{}},
+			{  }
+		);
+		std::cout << "build3 done" << std::endl;
 
-		return buildGroup({ build1, build2 });
+		// std::cout << "print build1" << std::endl;
+		// std::cout << build1 << std::endl;
+		// std::cout << "done printing build1" << std::endl;
+
+		// std::cout << "print build2" << std::endl;
+		// std::cout << build2 << std::endl;
+		// std::cout << "done printing build2" << std::endl;
+
+		// std::cout << "print build3" << std::endl;
+		// std::cout << build3 << std::endl;
+		// std::cout << "done printing build3" << std::endl;
+
+		std::cout << "manifest end" << std::endl;
+		return buildGroup({ &build1, &build2, &build3 });
 	}
 }

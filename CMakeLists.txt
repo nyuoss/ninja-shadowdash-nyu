@@ -4,12 +4,12 @@ include(CheckSymbolExists)
 include(CheckIPOSupported)
 
 # Config clang-tidy
-find_program(CLANG_TIDY_EXE NAMES clang-tidy)
-if(CLANG_TIDY_EXE)
-  set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
-else()
-  message(WARNING "clang-tidy not found!")
-endif()
+# find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+# if(CLANG_TIDY_EXE)
+#   set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
+# else()
+#   message(WARNING "clang-tidy not found!")
+# endif()
 
 option(NINJA_BUILD_BINARY "Build ninja binary" ON)
 option(NINJA_FORCE_PSELECT "Use pselect() even on platforms that provide ppoll()" OFF)
@@ -206,6 +206,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "OS400" OR CMAKE_SYSTEM_NAME STREQUAL "AIX")
 	add_compile_definitions(__STDC_FORMAT_MACROS)
 endif()
 
+set(SHADOWDASH_SPECIFIC_COMPILE_OPTIONS "-fPIC")
+
 # Main executable is library plus main() function.
 if(NINJA_BUILD_BINARY)
 	add_executable(ninja src/ninja.cc)
@@ -214,6 +216,8 @@ if(NINJA_BUILD_BINARY)
 	target_link_libraries(ninja_hello PRIVATE libninja libninja-re2c)
 	add_executable(shadowdash src/shadowdash_build.cc)
 	target_link_libraries(shadowdash PRIVATE libninja libninja-re2c)
+	target_compile_options(shadowdash PRIVATE ${SHADOWDASH_SPECIFIC_COMPILE_OPTIONS})
+	target_link_libraries(shadowdash PRIVATE "/home/ShadowDash/convertor/output/libmanifest.so")
 
 	if(WIN32)
 		target_sources(ninja PRIVATE windows/ninja.manifest)

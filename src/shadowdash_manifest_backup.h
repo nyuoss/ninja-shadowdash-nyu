@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <string_view>
+#include <string>
 #include <vector>
 #include <utility>
 
@@ -11,16 +11,16 @@ class Token {
 public:
     enum Type { LITERAL, VAR };
 
-    Token(Type type, std::string_view value)
+    Token(Type type, std::string value)
         : type_(type), value_(value) {
         //std::cout << "creating " << type << " : " << value_ << std::endl;
     }
 
-    Token(std::string_view value) : Token(Token::LITERAL, value) {
+    Token(std::string value) : Token(Token::LITERAL, value) {
         //std::cout << "creating LITERAL: " << value_ << std::endl;
     }
 
-    Token(const char* value) : Token(Token::LITERAL, std::string_view(value)) {
+    Token(const char* value) : Token(Token::LITERAL, std::string(value)) {
         // std::cout << "creating LITERAL: " << value << std::endl;
     }
 
@@ -29,8 +29,7 @@ public:
     }
 
     Type type_;
-    std::string_view value_;
-    std::vector<char> _holder;
+    std::string value_;
 };
 
 // Overload operator<< for Token
@@ -40,11 +39,11 @@ public:
 // }
 
 // Token operator"" _l(const char* value, std::size_t len) {
-//     return Token(Token::Type::LITERAL, std::string_view(value, len));
+//     return Token(Token::Type::LITERAL, std::string(value, len));
 // }
 
 // Token operator"" _v(const char* value, std::size_t len) {
-//     return Token(Token::Type::VAR, std::string_view(value, len));
+//     return Token(Token::Type::VAR, std::string(value, len));
 // }
 
 class str {
@@ -70,7 +69,7 @@ public:
 //     return os;
 // }
 
-using binding = std::pair<std::string_view, str>;
+using binding = std::pair<std::string, str>;
 using map = std::vector<binding>;
 
 class list {
@@ -98,9 +97,9 @@ public:
 
 class var {
 public:
-    var(const char* name, str value) : name_(std::string_view(name)), value_(value) {}
+    var(const char* name, str value) : name_(std::string(name)), value_(value) {}
 
-    std::string_view name_;
+    std::string name_;
     str value_;
 };
 
@@ -147,11 +146,11 @@ public:
         phony
     };
 
-    std::string_view name;
+    std::string name;
     RULE_TYPE type;
     map bindings_;
 
-    rule(const char* name, map bindings) : name(std::string_view(name)), bindings_(bindings), type(normal) {}
+    rule(const char* name, map bindings) : name(std::string(name)), bindings_(bindings), type(normal) {}
     rule(RULE_TYPE type) : name("phony"), bindings_({}), type(phony) {}
 };
 

@@ -29,6 +29,7 @@ struct StringPiece {
 
   /// The constructors intentionally allow for implicit conversions.
   StringPiece(const std::string& str) : str_(str.data()), len_(str.size()) {}
+  StringPiece(const std::string_view& str) : str_(str.data()), len_(str.size()) {}
   StringPiece(const char* str) : str_(str), len_(strlen(str)) {}
 
   StringPiece(const char* str, size_t len) : str_(str), len_(len) {}

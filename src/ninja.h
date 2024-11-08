@@ -56,6 +56,11 @@
 
 using namespace std;
 
+// shadowdash manifest entry
+// shadowdash::buildGroup manifest();
+
+typedef shadowdash::buildGroup (*ManifestFunc)();
+
 #ifdef _WIN32
 // Defined in msvc_helper_main-win32.cc.
 int MSVCHelperMain(int argc, char** argv);
@@ -1607,6 +1612,7 @@ NORETURN void real_main(int argc, char** argv) {
 
     ninja.ParsePreviousElapsedTimes();
 
+    cout << "ninja runbuild" << endl;
     int result = ninja.RunBuild(argc, argv, status);
     if (g_metrics)
       ninja.DumpMetrics();
@@ -1678,39 +1684,37 @@ NORETURN void compile_hello(int argc, char** argv) {
 }
 
 Rule* shadowdash_build_rule(shadowdash::rule rule) {
-    if(rule.is_special)
+    if(rule.type == shadowdash::rule::phony)
     {
-        if(rule._rule_data.sp_rule == shadowdash::rule::phony)
-        {
-          const Rule* rule = &State::kPhonyRule;
-          return (Rule*)rule;
-        }
-        else
-        {
-          cout << "unknown special rule" << endl;
-          exit(1);
-        }
+        const Rule* rule = &State::kPhonyRule;
+        return (Rule*)rule;
     }
 
-    Rule* rule_ninja = new Rule("test");
-    for (const auto& binding : rule._rule_data.bindings_) {
+    Rule* rule_ninja = new Rule(std::string(rule.name));
+    for (const auto& binding : rule.bindings_) {
         EvalString *value = new EvalString;
         bool first_iteration = true;
         for(shadowdash::Token token : binding.second.tokens_)
         {
+            cout << token.value_ << endl;
             if(token.type_ == token.LITERAL)
                 value->AddText(token.value_);
             else if(token.type_ == token.VAR)
                 value->AddSpecial(token.value_);
             first_iteration = false;
         }
-        rule_ninja->AddBinding(binding.first, *value);
+        rule_ninja->AddBinding(std::string(binding.first), *value);
     }
     return rule_ninja;
 }
 
 void shadowdash_build_edge(const shadowdash::build& build, State* state, string* err) {
-    Rule* rule = shadowdash_build_rule(build.rule_);
+    const Rule* rule = state->bindings_.LookupRule(std::string(build.rule_.name));
+    if(!rule)
+    {
+      rule = shadowdash_build_rule(build.rule_);
+      state->bindings_.AddRule(rule);
+    }
     Edge* edge = state->AddEdge(rule);
 
     for(const shadowdash::str& str : build.outputs_.values_) {
@@ -1775,12 +1779,25 @@ void shadowdash_build_edge(const shadowdash::build& build, State* state, string*
                 value->AddSpecial(token.value_);
             first_iteration = false;
         }
-        env->AddBinding(binding.first, value->Evaluate(env_));
+        env->AddBinding(std::string(binding.first), value->Evaluate(env_));
     }
     edge->env_ = env;
 }
 
-NORETURN void shadowdash_compile(int argc, char** argv, shadowdash::buildGroup& builds) {
+shadowdash::buildGroup run_manifest(ManifestFunc manifest) {
+    METRIC_RECORD(".shadowdash manifest");
+    return manifest();
+}
+
+void shadowdash_build_graph(ManifestFunc manifest, State* state, string* err) {
+    METRIC_RECORD(".shadowdash parse");
+    shadowdash::buildGroup builds = run_manifest(manifest);
+    for(const shadowdash::build& build: builds.builds) {
+        shadowdash_build_edge(build, state, err);
+    }
+}
+
+NORETURN void shadowdash_compile(int argc, char** argv, ManifestFunc manifest) {
     // a bunch of ninja init stuff
     const char* ninja_command = argv[0];
     BuildConfig config;
@@ -1794,13 +1811,14 @@ NORETURN void shadowdash_compile(int argc, char** argv, shadowdash::buildGroup& 
 
     NinjaMain ninja(ninja_command, config);
 
-    string* err;
+    string* err = new string();
 
     // ninja init done, start building graph
 
-    for(const shadowdash::build& build: builds.builds) {
-        shadowdash_build_edge(build, &ninja.state_, err);
-    }
+    shadowdash_build_graph(manifest, &ninja.state_, err);
+    // for(const shadowdash::build& build: builds.builds) {
+    //     shadowdash_build_edge(build, &ninja.state_, err);
+    // }
     
     if (!ninja.EnsureBuildDirExists())
       exit(1);
@@ -1808,8 +1826,12 @@ NORETURN void shadowdash_compile(int argc, char** argv, shadowdash::buildGroup& 
     if (!ninja.OpenBuildLog() || !ninja.OpenDepsLog())
       exit(1);
 
-    // graph building done, start actual building
+    // // graph building done, start actual building
     int result = ninja.RunBuild(argc, argv, status);
+    cout << "runbuild done" << endl;
+
+    if (g_metrics)
+      ninja.DumpMetrics();
     exit(result);
     // exit(0);
 }
