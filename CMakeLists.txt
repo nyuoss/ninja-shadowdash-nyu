@@ -3,6 +3,13 @@ cmake_minimum_required(VERSION 3.15)
 include(CheckSymbolExists)
 include(CheckIPOSupported)
 
+find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+if(CLANG_TIDY_EXE)
+  set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
+else()
+  message(WARNING "clang-tidy not found!")
+endif()
+
 option(NINJA_BUILD_BINARY "Build ninja binary" ON)
 option(NINJA_FORCE_PSELECT "Use pselect() even on platforms that provide ppoll()" OFF)
 
@@ -184,6 +191,7 @@ add_library(libninja OBJECT
 	src/metrics.cc
 	src/missing_deps.cc
 	src/parser.cc
+	src/real_command_runner.cc
 	src/state.cc
 	src/status_printer.cc
 	src/string_piece_util.cc
@@ -225,6 +233,7 @@ else()
 endif()
 
 target_compile_features(libninja PUBLIC cxx_std_11)
+target_compile_features(libninja-re2c PUBLIC cxx_std_11)
 
 #Fixes GetActiveProcessorCount on MinGW
 if(MINGW)
@@ -244,6 +253,12 @@ if(NINJA_BUILD_BINARY)
 
 	if(WIN32)
 		target_sources(ninja PRIVATE windows/ninja.manifest)
+	endif()
+
+	option(NINJA_CLANG_TIDY "Run clang-tidy on source files" OFF)
+	if(NINJA_CLANG_TIDY)
+		set_target_properties(libninja PROPERTIES CXX_CLANG_TIDY "clang-tidy;--use-color")
+		set_target_properties(ninja    PROPERTIES CXX_CLANG_TIDY "clang-tidy;--use-color")
 	endif()
 endif()
 
@@ -350,8 +365,10 @@ if(BUILD_TESTING)
     target_link_options(manifest_parser_perftest PRIVATE "-Wl,-bmaxdata:0x80000000")
   endif()
 
+
   add_test(NAME NinjaTest COMMAND ninja_test)
-endif()
+
+  endif()
 
 if(NINJA_BUILD_BINARY)
 	install(TARGETS ninja)
