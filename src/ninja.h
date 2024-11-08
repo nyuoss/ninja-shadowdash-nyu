@@ -1696,7 +1696,7 @@ Rule* shadowdash_build_rule(shadowdash::rule rule) {
         bool first_iteration = true;
         for(shadowdash::Token token : binding.second.tokens_)
         {
-            cout << token.value_ << endl;
+            // cout << token.value_ << endl;
             if(token.type_ == token.LITERAL)
                 value->AddText(token.value_);
             else if(token.type_ == token.VAR)
@@ -1792,6 +1792,7 @@ shadowdash::buildGroup run_manifest(ManifestFunc manifest) {
 void shadowdash_build_graph(ManifestFunc manifest, State* state, string* err) {
     METRIC_RECORD(".shadowdash parse");
     shadowdash::buildGroup builds = run_manifest(manifest);
+    cout << "run manifest done" << endl;
     for(const shadowdash::build& build: builds.builds) {
         shadowdash_build_edge(build, state, err);
     }

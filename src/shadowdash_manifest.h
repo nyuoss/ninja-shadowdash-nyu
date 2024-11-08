@@ -29,15 +29,14 @@ public:
     }
 
     Type type_;
-    std::string_view value_;
-    std::vector<char> _holder;
+    std::string value_;
 };
 
 // Overload operator<< for Token
-// std::ostream& operator<<(std::ostream& os, const Token& token) {
-//     os << (token.type_ == Token::LITERAL ? "LITERAL" : "VAR") << ": " << token.value_;
-//     return os;
-// }
+std::ostream& operator<<(std::ostream& os, const Token& token) {
+    os << (token.type_ == Token::LITERAL ? "LITERAL" : "VAR") << ": " << token.value_;
+    return os;
+}
 
 // Token operator"" _l(const char* value, std::size_t len) {
 //     return Token(Token::Type::LITERAL, std::string_view(value, len));
@@ -61,14 +60,14 @@ public:
 };
 
 // Overload operator<< for str
-// std::ostream& operator<<(std::ostream& os, const str& s) {
-//     os << "str: [";
-//     for (const auto& token : s.tokens_) {
-//         os << token << ", ";
-//     }
-//     os << "]";
-//     return os;
-// }
+std::ostream& operator<<(std::ostream& os, const str& s) {
+    os << "str: [";
+    for (const auto& token : s.tokens_) {
+        os << token << ", ";
+    }
+    os << "]";
+    return os;
+}
 
 using binding = std::pair<std::string_view, str>;
 using map = std::vector<binding>;
@@ -77,9 +76,9 @@ class list {
 public:
     list(std::vector<str> values) : values_(values) {
         //std::cout << "creating list: ";
-        // for (const auto& value : values_) {
-            //std::cout << value << " ";
-        // }
+        for (const auto& value : values_) {
+            std::cout << value << " ";
+        }
         //std::cout << std::endl;
     }
 
@@ -87,14 +86,14 @@ public:
 };
 
 // Overload operator<< for list
-// std::ostream& operator<<(std::ostream& os, const list& l) {
-//     os << "list: [";
-//     for (const auto& value : l.values_) {
-//         os << value << ", ";
-//     }
-//     os << "]";
-//     return os;
-// }
+std::ostream& operator<<(std::ostream& os, const list& l) {
+    os << "list: [";
+    for (const auto& value : l.values_) {
+        os << value << ", ";
+    }
+    os << "]";
+    return os;
+}
 
 class var {
 public:
@@ -105,10 +104,10 @@ public:
 };
 
 // Overload operator<< for var
-// std::ostream& operator<<(std::ostream& os, const var& v) {
-//     os << "var: " << v.name_ << ", " << v.value_;
-//     return os;
-// }
+std::ostream& operator<<(std::ostream& os, const var& v) {
+    os << "var: " << v.name_ << ", " << v.value_;
+    return os;
+}
 
 
 // class rule {
@@ -156,18 +155,18 @@ public:
 };
 
 // Overload operator<< for rule
-// std::ostream& operator<<(std::ostream& os, const rule& r) {
-//     os << "rule: [";
-//     if(r.type == rule::normal)
-//         os << r.type;
-//     else {
-//         for (const auto& binding : r.bindings_) {
-//             os << binding.first << ": " << binding.second << ", ";
-//         }
-//     }
-//     os << "]";
-//     return os;
-// }
+std::ostream& operator<<(std::ostream& os, const rule& r) {
+    os << "rule: [";
+    if(r.type == rule::normal)
+        os << r.type;
+    else {
+        for (const auto& binding : r.bindings_) {
+            os << binding.first << ": " << binding.second << ", ";
+        }
+    }
+    os << "]";
+    return os;
+}
 
 class build {
 public:
@@ -186,6 +185,7 @@ public:
           implicit_inputs_(implicit_inputs),
           order_only_inputs_(order_only_inputs),
           bindings_(bindings) {
+            
             // this->rule_ = rule;
         //std::cout << "creating build: ";
         //std::cout << "creating build outputs: ";
@@ -213,21 +213,21 @@ public:
 };
 
 // Overload operator<< for build
-// std::ostream& operator<<(std::ostream& os, const build& b) {
-//     os << "build: { "
-//        << "outputs: " << b.outputs_ << ", "
-//        << "implicit_outputs: " << b.implicit_outputs_ << ", "
-//        << "rule: " << b.rule_ << ", "
-//        << "inputs: " << b.inputs_ << ", "
-//        << "implicit_inputs: " << b.implicit_inputs_ << ", "
-//        << "order_only_inputs: " << b.order_only_inputs_ << ", "
-//        << "bindings: [";
-//     for (const auto& binding : b.bindings_) {
-//         os << binding.first << ": " << binding.second << ", ";
-//     }
-//     os << "] }";
-//     return os;
-// }
+std::ostream& operator<<(std::ostream& os, const build& b) {
+    os << "build: { "
+       << "outputs: " << b.outputs_ << ", "
+       << "implicit_outputs: " << b.implicit_outputs_ << ", "
+       << "rule: " << b.rule_ << ", "
+       << "inputs: " << b.inputs_ << ", "
+       << "implicit_inputs: " << b.implicit_inputs_ << ", "
+       << "order_only_inputs: " << b.order_only_inputs_ << ", "
+       << "bindings: [";
+    for (const auto& binding : b.bindings_) {
+        os << binding.first << ": " << binding.second << ", ";
+    }
+    os << "] }";
+    return os;
+}
 
 class buildGroup {
 public:
@@ -237,14 +237,14 @@ public:
 };
 
 // Overload operator<< for buildGroup
-// std::ostream& operator<<(std::ostream& os, const buildGroup& bg) {
-//     os << "buildGroup: [";
-//     for (const auto& b : bg.builds) {
-//         os << b << ", ";
-//     }
-//     os << "]";
-//     return os;
-// }
+std::ostream& operator<<(std::ostream& os, const buildGroup& bg) {
+    os << "buildGroup: [";
+    for (const auto& b : bg.builds) {
+        os << b << ", ";
+    }
+    os << "]";
+    return os;
+}
 
 // static auto in = "in"_v;
 // static auto out = "out"_v;
