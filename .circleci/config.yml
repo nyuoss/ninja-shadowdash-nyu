@@ -1,45 +1,54 @@
 
 version: 2.1
-executors:
-  docker-executor:
-    docker:
-      - image: cimg/base:stable
 jobs:
-  build:
-    executor: docker-executor
+  build-test:
+    docker:
+      - image: cimg/base:current
     steps:
+      # Checkout the code as the first step.
       - checkout
       - run:
-          name: Installing Dependencies
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y clang-tidy
+          name: InstallPreq
+          command: | 
+            echo "Installing clang-tidy"
+            sudo apt-get update && sudo apt-get install -y clang-tidy
+            echo "Installed"
       - run:
-          name: Building Project
-          command: |
-            cmake -B cicd-build
-            cmake --build cicd-build
-      - persist_to_workspace:
-          root: .
-          paths:
-            - cicd-build
-  test:
-    executor: docker-executor
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
+          name: Build
+          command: | 
+            echo "Building"
+            mkdir build && cd build
+            cmake -S ..
+            make -j $(nproc)
+            cd ../
+            echo "Built"
       - run:
-          name: Run Tests
+          name: ninjaTest
+          command: | 
+            cd build
+            ./ninja_test --gtest_output=XML
+            echo "Testing Done"
+      - store_test_results:
+              path: build
+      - run:
+          name: ctest
+          command: | 
+            echo "Start Testing"
+            cd build
+            ctest --output-junit results.xml
+            echo "Testing Done"
+      - store_test_results:
+              path: build/results.xml
+      - run:
+          name: Run Performance Tests
           command: |
-            ctest
-            ./cicd-build/ninja_test
-            ./cicd-build/manifest_parser_perftest
+            cd build
+            for test in build_log_perftest canon_perftest clparser_perftest elide_middle_perftest hash_collision_bench; do
+              echo "Running $test"
+              ./$test
+            done
+
 workflows:
-  version: 2
-  build_and_test:
+  build-test-workflow: 
     jobs:
-      - build
-      - test:
-          requires:
-            - build
+      - build-test
