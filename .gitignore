@@ -49,8 +49,14 @@
 /.vs/
 /out/
 
-# dev files for Shadowdash
+# general dev files for Shadowdash
 *commands.md
 *CMakeFiles
 *.so
 *.dylib
+*.dll
+
+# compile hello_world
+*hello_world
+*hello_world.o
+*test1
