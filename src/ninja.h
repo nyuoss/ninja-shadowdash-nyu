@@ -1,3 +1,4 @@
+#pragma once
 // Copyright 2011 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 
 #include <algorithm>
 #include <cstdlib>
@@ -52,14 +54,14 @@
 #include "util.h"
 #include "version.h"
 
-#include "shadowdash_manifest.h"
+// #include "shadowdash_manifest.h"
 
 using namespace std;
 
 // shadowdash manifest entry
 // shadowdash::buildGroup manifest();
 
-typedef shadowdash::buildGroup (*ManifestFunc)();
+// typedef shadowdash::buildGroup (*ManifestFunc)();
 
 #ifdef _WIN32
 // Defined in msvc_helper_main-win32.cc.
@@ -1683,157 +1685,157 @@ NORETURN void compile_hello(int argc, char** argv) {
   exit(result);
 }
 
-Rule* shadowdash_build_rule(shadowdash::rule rule) {
-    if(rule.type == shadowdash::rule::phony)
-    {
-        const Rule* rule = &State::kPhonyRule;
-        return (Rule*)rule;
-    }
+// Rule* shadowdash_build_rule(shadowdash::rule rule) {
+//     if(rule.type == shadowdash::rule::phony)
+//     {
+//         const Rule* rule = &State::kPhonyRule;
+//         return (Rule*)rule;
+//     }
 
-    Rule* rule_ninja = new Rule(std::string(rule.name));
-    for (const auto& binding : rule.bindings_) {
-        EvalString *value = new EvalString;
-        bool first_iteration = true;
-        for(shadowdash::Token token : binding.second.tokens_)
-        {
-            // cout << token.value_ << endl;
-            if(token.type_ == token.LITERAL)
-                value->AddText(token.value_);
-            else if(token.type_ == token.VAR)
-                value->AddSpecial(token.value_);
-            first_iteration = false;
-        }
-        rule_ninja->AddBinding(std::string(binding.first), *value);
-    }
-    return rule_ninja;
-}
+//     Rule* rule_ninja = new Rule(std::string(rule.name));
+//     for (const auto& binding : rule.bindings_) {
+//         EvalString *value = new EvalString;
+//         bool first_iteration = true;
+//         for(shadowdash::Token token : binding.second.tokens_)
+//         {
+//             // cout << token.value_ << endl;
+//             if(token.type_ == token.LITERAL)
+//                 value->AddText(token.value_);
+//             else if(token.type_ == token.VAR)
+//                 value->AddSpecial(token.value_);
+//             first_iteration = false;
+//         }
+//         rule_ninja->AddBinding(std::string(binding.first), *value);
+//     }
+//     return rule_ninja;
+// }
 
-void shadowdash_build_edge(const shadowdash::build& build, State* state, string* err) {
-    const Rule* rule = state->bindings_.LookupRule(std::string(build.rule_.name));
-    if(!rule)
-    {
-      rule = shadowdash_build_rule(build.rule_);
-      state->bindings_.AddRule(rule);
-    }
-    Edge* edge = state->AddEdge(rule);
+// void shadowdash_build_edge(const shadowdash::build& build, State* state, string* err) {
+//     const Rule* rule = state->bindings_.LookupRule(std::string(build.rule_.name));
+//     if(!rule)
+//     {
+//       rule = shadowdash_build_rule(build.rule_);
+//       state->bindings_.AddRule(rule);
+//     }
+//     Edge* edge = state->AddEdge(rule);
 
-    for(const shadowdash::str& str : build.outputs_.values_) {
-        string output;
-        for (const shadowdash::Token& token: str.tokens_) {
-            output.append(token.value_);
-        }
-        state->AddOut(edge, output, 0, err);
-    }
+//     for(const shadowdash::str& str : build.outputs_.values_) {
+//         string output;
+//         for (const shadowdash::Token& token: str.tokens_) {
+//             output.append(token.value_);
+//         }
+//         state->AddOut(edge, output, 0, err);
+//     }
 
-    int implicit_output = 0;
-    for(const shadowdash::str& str : build.implicit_outputs_.values_) {
-        string output;
-        for (const shadowdash::Token& token: str.tokens_) {
-            output.append(token.value_);
-        }
-        ++implicit_output;
-        state->AddOut(edge, output, 0, err);
-    }
-    edge->implicit_outs_ = implicit_output;
+//     int implicit_output = 0;
+//     for(const shadowdash::str& str : build.implicit_outputs_.values_) {
+//         string output;
+//         for (const shadowdash::Token& token: str.tokens_) {
+//             output.append(token.value_);
+//         }
+//         ++implicit_output;
+//         state->AddOut(edge, output, 0, err);
+//     }
+//     edge->implicit_outs_ = implicit_output;
 
-    for(const shadowdash::str& str : build.inputs_.values_) {
-        string input;
-        for (const shadowdash::Token& token: str.tokens_) {
-            input.append(token.value_);
-        }
-        state->AddIn(edge, input, 0);
-    }
+//     for(const shadowdash::str& str : build.inputs_.values_) {
+//         string input;
+//         for (const shadowdash::Token& token: str.tokens_) {
+//             input.append(token.value_);
+//         }
+//         state->AddIn(edge, input, 0);
+//     }
 
-    int implicit_input = 0;
-    for(const shadowdash::str& str : build.implicit_inputs_.values_) {
-        string input;
-        for (const shadowdash::Token& token: str.tokens_) {
-            input.append(token.value_);
-        }
-        ++implicit_input;
-        state->AddIn(edge, input, 0);
-    }
+//     int implicit_input = 0;
+//     for(const shadowdash::str& str : build.implicit_inputs_.values_) {
+//         string input;
+//         for (const shadowdash::Token& token: str.tokens_) {
+//             input.append(token.value_);
+//         }
+//         ++implicit_input;
+//         state->AddIn(edge, input, 0);
+//     }
 
-    int order_only = 0;
-    for(const shadowdash::str& str : build.order_only_inputs_.values_) {
-        string input;
-        for (const shadowdash::Token& token: str.tokens_) {
-            input.append(token.value_);
-        }
-        ++order_only;
-        state->AddIn(edge, input, 0);
-    }
-    edge->implicit_deps_ = implicit_input;
-    edge->order_only_deps_ = order_only;
+//     int order_only = 0;
+//     for(const shadowdash::str& str : build.order_only_inputs_.values_) {
+//         string input;
+//         for (const shadowdash::Token& token: str.tokens_) {
+//             input.append(token.value_);
+//         }
+//         ++order_only;
+//         state->AddIn(edge, input, 0);
+//     }
+//     edge->implicit_deps_ = implicit_input;
+//     edge->order_only_deps_ = order_only;
 
-    BindingEnv *env_ = &state->bindings_;
-    BindingEnv* env = new BindingEnv(env_);
-    for (const auto& binding : build.bindings_) {
-        EvalString *value = new EvalString;
-        bool first_iteration = true;
-        for(shadowdash::Token token : binding.second.tokens_)
-        {
-            if(token.type_ == token.LITERAL)
-                value->AddText(token.value_);
-            else if(token.type_ == token.VAR)
-                value->AddSpecial(token.value_);
-            first_iteration = false;
-        }
-        env->AddBinding(std::string(binding.first), value->Evaluate(env_));
-    }
-    edge->env_ = env;
-}
+//     BindingEnv *env_ = &state->bindings_;
+//     BindingEnv* env = new BindingEnv(env_);
+//     for (const auto& binding : build.bindings_) {
+//         EvalString *value = new EvalString;
+//         bool first_iteration = true;
+//         for(shadowdash::Token token : binding.second.tokens_)
+//         {
+//             if(token.type_ == token.LITERAL)
+//                 value->AddText(token.value_);
+//             else if(token.type_ == token.VAR)
+//                 value->AddSpecial(token.value_);
+//             first_iteration = false;
+//         }
+//         env->AddBinding(std::string(binding.first), value->Evaluate(env_));
+//     }
+//     edge->env_ = env;
+// }
 
-shadowdash::buildGroup run_manifest(ManifestFunc manifest) {
-    METRIC_RECORD(".shadowdash manifest");
-    return manifest();
-}
+// shadowdash::buildGroup run_manifest(ManifestFunc manifest) {
+//     METRIC_RECORD(".shadowdash manifest");
+//     return manifest();
+// }
 
-void shadowdash_build_graph(ManifestFunc manifest, State* state, string* err) {
-    METRIC_RECORD(".shadowdash parse");
-    shadowdash::buildGroup builds = run_manifest(manifest);
-    cout << "run manifest done" << endl;
-    for(const shadowdash::build& build: builds.builds) {
-        shadowdash_build_edge(build, state, err);
-    }
-}
+// void shadowdash_build_graph(ManifestFunc manifest, State* state, string* err) {
+//     METRIC_RECORD(".shadowdash parse");
+//     shadowdash::buildGroup builds = run_manifest(manifest);
+//     cout << "run manifest done" << endl;
+//     for(const shadowdash::build& build: builds.builds) {
+//         shadowdash_build_edge(build, state, err);
+//     }
+// }
 
-NORETURN void shadowdash_compile(int argc, char** argv, ManifestFunc manifest) {
-    // a bunch of ninja init stuff
-    const char* ninja_command = argv[0];
-    BuildConfig config;
-    Options options = {};
+// NORETURN void shadowdash_compile(int argc, char** argv) {
+//     // a bunch of ninja init stuff
+//     const char* ninja_command = argv[0];
+//     BuildConfig config;
+//     Options options = {};
 
-    int exit_code = ReadFlags(&argc, &argv, &options, &config);
-    if (exit_code >= 0)
-        exit(exit_code);
+//     int exit_code = ReadFlags(&argc, &argv, &options, &config);
+//     if (exit_code >= 0)
+//         exit(exit_code);
 
-    Status* status = Status::factory(config);
+//     Status* status = Status::factory(config);
 
-    NinjaMain ninja(ninja_command, config);
+//     NinjaMain ninja(ninja_command, config);
 
-    string* err = new string();
+//     string* err = new string();
 
-    // ninja init done, start building graph
+//     // ninja init done, start building graph
 
-    shadowdash_build_graph(manifest, &ninja.state_, err);
-    // for(const shadowdash::build& build: builds.builds) {
-    //     shadowdash_build_edge(build, &ninja.state_, err);
-    // }
+//     shadowdash_build_graph(manifest, &ninja.state_, err);
+//     // for(const shadowdash::build& build: builds.builds) {
+//     //     shadowdash_build_edge(build, &ninja.state_, err);
+//     // }
     
-    if (!ninja.EnsureBuildDirExists())
-      exit(1);
+//     if (!ninja.EnsureBuildDirExists())
+//       exit(1);
 
-    if (!ninja.OpenBuildLog() || !ninja.OpenDepsLog())
-      exit(1);
+//     if (!ninja.OpenBuildLog() || !ninja.OpenDepsLog())
+//       exit(1);
 
-    // // graph building done, start actual building
-    int result = ninja.RunBuild(argc, argv, status);
-    cout << "runbuild done" << endl;
+//     // // graph building done, start actual building
+//     int result = ninja.RunBuild(argc, argv, status);
+//     cout << "runbuild done" << endl;
 
-    if (g_metrics)
-      ninja.DumpMetrics();
-    exit(result);
-    // exit(0);
-}
+//     if (g_metrics)
+//       ninja.DumpMetrics();
+//     exit(result);
+//     // exit(0);
+// }
 }  // ninja namespace
