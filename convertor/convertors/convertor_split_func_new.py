@@ -590,12 +590,16 @@ def parseRule(line: str, reader: FileReader):
                 exit(1)
 
             parseRuleVal(depfile, val)
+            depfile = [val for pair in zip(depfile, ["\" \""] * (len(depfile) - 1)) for val in pair] + [depfile[-1]]
+            depfile = concat_str(depfile)
         elif key == "deps":
             if len(deps) > 0:
                 print("multiple deps found in the rule!")
                 exit(1)
 
             parseRuleVal(deps, val)
+            deps = [val for pair in zip(deps, ["\" \""] * (len(deps) - 1)) for val in pair] + [deps[-1]]
+            deps = concat_str(deps)
         else:
             if key in other_attr:
                 print(f"multiple {key} found in the rule!")
@@ -604,6 +608,8 @@ def parseRule(line: str, reader: FileReader):
             other_attr[key] = []
 
             parseRuleVal(other_attr[key], val)
+            other_attr[key] = [val for pair in zip(other_attr[key], ["\" \""] * (len(other_attr[key]) - 1)) for val in pair] + [other_attr[key][-1]]
+            other_attr[key] = concat_str(other_attr[key])
 
     parsedStore.append_rule(name, commands, depfile, deps, other_attr)
 
