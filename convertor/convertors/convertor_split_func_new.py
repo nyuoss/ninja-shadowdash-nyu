@@ -5,8 +5,8 @@ import shutil
 import math
 
 # =========== convertor parameters ===========
-blocks = 2048
-optimizer = "-O3"
+blocks = 256
+optimizer = "-O0"
 job_threads = 8
 # =========== convertor parameters ===========
 
@@ -543,6 +543,21 @@ def parseRuleVal(lst, val: str):
         else:
             lst.append(f"\"{word}\"")
 
+def concat_str(lst: list):
+    result = []
+
+    word = ""
+    for item in lst:
+        if item[-1] == 'v':
+            if word != "":
+                result.append(f"\"{word}\"")
+                word = ""
+            result.append(item)
+        else:
+            word += item[1:-1]
+    
+    return result
+
 def parseRule(line: str, reader: FileReader):
     name = line.split(" ")[1]
     commands = []
@@ -568,6 +583,7 @@ def parseRule(line: str, reader: FileReader):
 
             parseRuleVal(commands, val)
             commands = [val for pair in zip(commands, ["\" \""] * (len(commands) - 1)) for val in pair] + [commands[-1]]
+            commands = concat_str(commands)
         elif key == "depfile":
             if len(depfile) > 0:
                 print("multiple depfile found in the rule!")
