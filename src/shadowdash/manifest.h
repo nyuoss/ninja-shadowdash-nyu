@@ -44,6 +44,7 @@ public:
   constexpr size_t size() const {return values_.size();}
   str operator[] (size_t i) const {return *(values_.begin() + i);}
 
+private:
   std::initializer_list<str> values_;
 };
 
