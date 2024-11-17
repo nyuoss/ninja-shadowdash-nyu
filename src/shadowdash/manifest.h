@@ -48,47 +48,69 @@ public:
 };
 
 class var {
+private:
+  const char* name_;
+  str value_;
 public:
-  var(const char* name, str value) {}
+  var(const char* name, str value): name_(name), value_(value) {}
 };
 
 class rule {
+private:
+  map bindings_;
 public:
-  rule(map bindings) {}
+  rule(map bindings): bindings_(bindings) {}
 };
 
 class pool_ {
+private:
+  binding depth_;
 public:
-  pool_(binding depth){}
+  pool_(binding depth): depth_(depth)  {}
 };
 
 class build {
+private:
+    list outputs_;
+    list implicit_outputs_;
+    rule& rule_;
+    list inputs_;
+    list implicit_inputs_;
+    list order_only_inputs_;
+    map bindings_;
+
 public:
-  build(
-    list outputs,
-    list implicit_outputs,
-    rule& rule,
-    list inputs,
-    list implicit_inputs,
-    list order_only_inputs,
-    map bindings
-  ){}
+    build(
+        list outputs,
+        list implicit_outputs,
+        rule& rule,
+        list inputs,
+        list implicit_inputs,
+        list order_only_inputs,
+        map bindings
+    ) : outputs_(outputs),
+        implicit_outputs_(implicit_outputs),
+        rule_(rule),
+        inputs_(inputs),
+        implicit_inputs_(implicit_inputs),
+        order_only_inputs_(order_only_inputs),
+        bindings_(bindings) {}
 };
 
 class default_{
 public:
   default_(list addedList){
-    for (size_t i = 0; i < addedList.size(); i++) targets.push_back(addedList[i]);
+    for (size_t i = 0; i < addedList.size(); i++) targets_.push_back(addedList[i]);
   }
 
   default_(str addedTarget) {
-    targets.push_back(addedTarget);
+    targets_.push_back(addedTarget);
   }
 
-  static std::vector<str> targets;
+  static std::vector<str> targets_;
 };
 
-std::vector<str> default_::targets;
+std::vector<str> default_::targets_;
 
 static constexpr auto in = "in"_v;
 static constexpr auto out = "out"_v;
