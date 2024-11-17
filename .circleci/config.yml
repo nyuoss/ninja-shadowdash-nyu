@@ -61,10 +61,10 @@ jobs:
 
             cd src/shadowdash
 
-            g++ -std=c++17 -fPIC -c manifest.cc  manifest.h
+            g++ -w -std=c++17 -fPIC -c manifest.cc  manifest.h
             check_success ".o compiled successfully"
 
-            g++ -shared -o manifest.so manifest.o
+            g++ -w -shared -o manifest.so manifest.o
             check_success ".so compiled successfully"
 
             cd ../..
