@@ -10,7 +10,6 @@ void manifest();
 State* ninja_state;
 
 NORETURN void shadowdash_compile(int argc, char** argv) {
-    METRIC_RECORD(".shadowdash parse");
     // a bunch of ninja init stuff
     const char* ninja_command = argv[0];
     BuildConfig config;
@@ -42,7 +41,6 @@ NORETURN void shadowdash_compile(int argc, char** argv) {
 
     // // graph building done, start actual building
     int result = ninja.RunBuild(argc, argv, status);
-    cout << "runbuild done" << endl;
 
     if (g_metrics)
       ninja.DumpMetrics();
@@ -51,22 +49,5 @@ NORETURN void shadowdash_compile(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-    // Call the manifest function and get the returned value
-    // shadowdash::buildGroup builds = manifest();
-    
-    // cout << "in shadowdash, ready to print build" << endl;
-    // for(const shadowdash::build build : builds.builds) {
-        // cout << "build" << endl;
-        // for(const shadowdash::str& str : build.outputs_.values_) {
-        //     cout << "outputs" << endl;
-        //     for (const shadowdash::Token& token: str.tokens_) {
-        //         cout << "token: " << token.value_ << endl;
-        //     }
-        // }
-    //     cout << build << endl;
-    // }
-    // cout << "done printing build" << endl;
-
     shadowdash_compile(argc, argv);
-    // return 0;
 }
