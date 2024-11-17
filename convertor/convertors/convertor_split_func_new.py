@@ -141,6 +141,15 @@ using namespace shadowdash;
         self.build_count = 0
         self.build_rule_map = []
     
+    def write_string(self, name_loopup_table):
+        for key in name_loopup_table:
+            name = name_loopup_table[key]
+            if key.startswith("str"):
+                self.write_line(f"static str {name} = {key};")
+            else:
+                self.write_line(f"static const char* {name} = {key};")
+        self.newline()
+
     def write_build(self, _in, order_in, implicit_in, _out, implicit_out, rule, vars: dict):
         if build_limiter != None and self.build_count >= build_limiter:
             return
@@ -172,7 +181,8 @@ using namespace shadowdash;
             self.write_line(f"""list{{ {{{', '.join(implicit_out)}}} }},""")
 
         # write rule
-        self.write_line(f"\"{rule}\",")
+        # self.write_line(f"\"{rule}\",")
+        self.write_line(f"{rule},")
 
         # write inputs
         if _in != None:
@@ -199,7 +209,10 @@ using namespace shadowdash;
             val = vars[key].replace("\\", "\\\\").replace("\"", "\\\"")
             # val = vars[key].replace("\"", "\\\"")
             # val = vars[key]
-            transformed.append(f"bind({key}, {{\"{val}\"}})")
+            # transformed.append(f"bind({key}, {{\"{val}\"}})")
+            # transformed.append(f"{{\"{key}\", str{{{{\"{val}\"}}}}}}")
+
+            transformed.append(f"{{{key}, {val}}}")
         self.write_line(f"{{ {', '.join(transformed)} }}")
 
         self.decr_indent()
@@ -342,17 +355,29 @@ Token operator"" _v(const char* value, std::size_t len) {
     return Token(Token::Type::VAR, std::string(value, len));
 }
 
+"""
+        self.begin_main = """
 void build_rule() {
 """
-        self.begin_main = ""
 
         self.end = "}"
     
+    def write_string(self, name_loopup_table):
+        for key in name_loopup_table:
+            name = name_loopup_table[key]
+            if key[-1] == "\"":
+                self.write_line(f"static const char* {name} = {key};")
+            else:
+                self.write_line(f"static Token {name} = {key};")
+        self.newline()
+
+        self.write(self.begin_main)
+        self.indent = 1
     
-    def write_rule(self, name, commands, depfile, deps, other_attr):
+    def write_rule(self, name, commands, depfile, deps, other_attr, name_loopup_table):
         name = escape_name(name)
         
-        self.write_line(f"rule{{\"{name}\", {{")
+        self.write_line(f"rule{{{name}, {{")
         self.incr_indent()
         self.write_line(f"""bind(command, {{{', '.join(commands)}}}),""")
         if len(depfile) > 0:
@@ -380,7 +405,7 @@ void build_rule() {
 
     def __write_start(self):
         self.write(self.begin_header)
-        self.indent = 1
+        self.indent = 0
     
     def __write_end(self):
         self.decr_indent()
@@ -417,6 +442,8 @@ class ParsedStore:
 
         self.build_plan = []
         self.next_plan = 0
+
+        self.name_counter = 0
     
     def append_define(self, key, value):
         self.defines.append({"key": key, "value": value})
@@ -450,6 +477,10 @@ class ParsedStore:
     def set_writer(self, writer):
         self.current_writer = writer
     
+    def gen_next_str_name(self):
+        self.name_counter += 1
+        return f"str{self.name_counter}"
+
     def split_build_files(self):
         total_length = len(self.builds)
         step = max(math.ceil(total_length / self.build_blocks), self.minimal_builds)
@@ -483,10 +514,107 @@ class ParsedStore:
 
         assert(st == self.builds_counter)
 
-        for rule in rules:
-            self.current_writer.write_rule_extern(rule)
+        # for rule in rules:
+        #     self.current_writer.write_rule_extern(rule)
+
+        name_loopup_table = {}
+        
+        self.name_counter = 0
+        for i in range(st, ed):
+            rule_name = "\"" + self.builds[i]["rule"] + "\""
+            if rule_name not in name_loopup_table:
+                name = self.gen_next_str_name()
+                name_loopup_table[rule_name] = name
+                self.builds[i]["rule"] = name
+            else:
+                self.builds[i]["rule"] = name_loopup_table[rule_name]
+
+            if self.builds[i]["_in"] != None:
+                for index, item in enumerate(self.builds[i]["_in"]):
+                    if item in name_loopup_table:
+                        name = name_loopup_table[item]
+                        self.builds[i]["_in"][index] = name
+                        continue
+
+                    name = self.gen_next_str_name()
+                    name_loopup_table[item] = name
+                    self.builds[i]["_in"][index] = name
+
+            if self.builds[i]["order_in"] != None:
+                for index, item in enumerate(self.builds[i]["order_in"]):
+                    if item in name_loopup_table:
+                        name = name_loopup_table[item]
+                        self.builds[i]["order_in"][index] = name
+                        continue
+
+                    name = self.gen_next_str_name()
+                    name_loopup_table[item] = name
+                    self.builds[i]["order_in"][index] = name
+
+            if self.builds[i]["implicit_in"] != None:
+                for index, item in enumerate(self.builds[i]["implicit_in"]):
+                    if item in name_loopup_table:
+                        name = name_loopup_table[item]
+                        self.builds[i]["implicit_in"][index] = name
+                        continue
+
+                    name = self.gen_next_str_name()
+                    name_loopup_table[item] = name
+                    self.builds[i]["implicit_in"][index] = name
+
+            if self.builds[i]["_out"] != None:
+                for index, item in enumerate(self.builds[i]["_out"]):
+                    if item in name_loopup_table:
+                        name = name_loopup_table[item]
+                        self.builds[i]["_out"][index] = name
+                        continue
+
+                    name = self.gen_next_str_name()
+                    name_loopup_table[item] = name
+                    self.builds[i]["_out"][index] = name
+
+            if self.builds[i]["implicit_out"] != None:
+                for index, item in enumerate(self.builds[i]["implicit_out"]):
+                    if item in name_loopup_table:
+                        name = name_loopup_table[item]
+                        self.builds[i]["implicit_out"][index] = name
+                        continue
+
+                    name = self.gen_next_str_name()
+                    name_loopup_table[item] = name
+                    self.builds[i]["implicit_out"][index] = name
+            
+            if self.builds[i]["vars"] != None:
+                newvars = {}
+                for key in self.builds[i]["vars"]:
+                    val = self.builds[i]["vars"][key]
+                    val = val.replace("\\", "\\\\").replace("\"", "\\\"")
+                    val = "str{{\"" + val + "\"}}"
+
+                    key = "\"" + key + "\""
+                    if val not in name_loopup_table:
+                        name = self.gen_next_str_name()
+                        name_loopup_table[val] = name
+                        # self.builds[i]["vars"][key] = name
+                        new_val = name
+                    else:
+                        # self.builds[i]["vars"][key] = name_loopup_table[val]
+                        new_val = name_loopup_table[val]
+                    
+                    if key not in name_loopup_table:
+                        name = self.gen_next_str_name()
+                        name_loopup_table[key] = name
+                        new_key = name
+                    else:
+                        new_key = name_loopup_table[key]
+                    
+                    newvars[new_key] = new_val
+                self.builds[i]["vars"] = newvars
+
         
         self.current_writer.newline()
+
+        self.current_writer.write_string(name_loopup_table)
 
         while self.builds_counter < ed:
             self.current_writer.write_build(
@@ -505,11 +633,67 @@ class ParsedStore:
 
         self.next_plan += 1
 
-
     def write_rule_file(self):
         if self.current_writer == None:
             print("fatal: no current writer")
             exit(1)
+        
+        name_loopup_table = {}
+        
+        self.name_counter = 0
+        for i in range(len(self.rules)):
+            # name
+            name = self.gen_next_str_name()
+            rule_name = "\"" + self.rules[i]["name"] + "\""
+            name_loopup_table[rule_name] = name
+            self.rules[i]["name"] = name
+            
+            # commands
+            for index, item in enumerate(self.rules[i]["commands"]):
+                if item in name_loopup_table:
+                    name = name_loopup_table[item]
+                    self.rules[i]["commands"][index] = name
+                    continue
+
+                name = self.gen_next_str_name()
+                name_loopup_table[item] = name
+                self.rules[i]["commands"][index] = name
+
+            # depfile
+            for index, item in enumerate(self.rules[i]["depfile"]):
+                if item in name_loopup_table:
+                    name = name_loopup_table[item]
+                    self.rules[i]["depfile"][index] = name
+                    continue
+
+                name = self.gen_next_str_name()
+                name_loopup_table[item] = name
+                self.rules[i]["depfile"][index] = name
+
+            # deps
+            for index, item in enumerate(self.rules[i]["deps"]):
+                if item in name_loopup_table:
+                    name = name_loopup_table[item]
+                    self.rules[i]["deps"][index] = name
+                    continue
+
+                name = self.gen_next_str_name()
+                name_loopup_table[item] = name
+                self.rules[i]["deps"][index] = name
+
+            # other_attr
+            for key in self.rules[i]["other_attr"]:
+                for index, item in enumerate(self.rules[i]["other_attr"][key]):
+                    if item in name_loopup_table:
+                        name = name_loopup_table[item]
+                        self.rules[i]["other_attr"][key][index] = name
+                        continue
+
+                    name = self.gen_next_str_name()
+                    name_loopup_table[item] = name
+                    self.rules[i]["other_attr"][key][index] = name
+        
+        self.current_writer.write_string(name_loopup_table)
 
         while self.rules_counter < len(self.rules):
             self.current_writer.write_rule(
@@ -518,6 +702,7 @@ class ParsedStore:
                 self.rules[self.rules_counter]["depfile"],
                 self.rules[self.rules_counter]["deps"],
                 self.rules[self.rules_counter]["other_attr"],
+                name_loopup_table
             )
             self.rules_counter += 1
     
@@ -550,7 +735,7 @@ def concat_str(lst: list):
     for item in lst:
         if item[-1] == 'v':
             if word != "":
-                result.append(f"\"{word}\"")
+                result.append(f"\"{word}\"_l")
                 word = ""
             result.append(item)
         else:
