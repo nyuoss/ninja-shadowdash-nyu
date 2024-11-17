@@ -47,6 +47,25 @@ jobs:
               echo "Running $test"
               ./$test
             done
+      - run: 
+          name: Run Compile .o and .so Tests
+          command: |
+            g++ -std=c++17 -fPIC -c manifest.cc  manifest.h
+            if [ $? -eq 0 ]; then
+              echo ".o compiled successfully"
+            else
+              echo "failed"
+              exit 1
+            fi
+
+            g++ -shared -o manifest.so manifest.o
+            if [ $? -eq 0 ]; then
+              echo ".so compiled successfully"
+            else
+              echo "failed"
+              exit 1
+            fi
+
 
 workflows:
   build-test-workflow: 
