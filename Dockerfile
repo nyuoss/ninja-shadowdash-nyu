@@ -1,5 +1,5 @@
 # Use a base image
-FROM cimg/base:stable
+FROM cimg/base:current
 
 USER root
 
