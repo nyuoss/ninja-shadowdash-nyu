@@ -69,6 +69,13 @@ bool ManifestParser::Parse(const string& filename, const string& input,
       if (name == "ninja_required_version")
         CheckNinjaVersion(value);
       env_->AddBinding(name, value);
+
+      // handle conversion of let
+      g_output_ss << "\n\tlet(";
+      g_output_ss << name;
+      g_output_ss << ", {\"";
+      g_output_ss << value; // parent function gets value this way
+      g_output_ss << "\"});\n";
       break;
     }
     case Lexer::INCLUDE:
@@ -131,6 +138,51 @@ bool ManifestParser::ParsePool(string* err) {
   return true;
 }
 
+std::vector<std::string> split_by_spaces(const std::string& line) {
+    std::vector<std::string> tokens;
+    std::istringstream iss(line);
+    std::string token;
+
+    while (iss >> token) {
+        tokens.push_back(token);  // Extract token and push to vector
+    }
+
+    return tokens;
+}
+
+std::string extract_variable(const std::string& token) {
+    // Check if the token starts with '$' and contains both '${' and '}'
+    if (token[0] == '$' && token.find("${") == 0 && token.find('}') != std::string::npos) {
+        // Extract the content between '${' and '}'
+        size_t start = token.find("{") + 1;
+        size_t end = token.find("}");
+        return token.substr(start, end - start);
+    }
+    
+    // Return an empty string if it's not a valid ${} expression
+    return "";
+}
+
+void escape_quotes_in_place(std::string& input) {
+    for (size_t i = 0; i < input.size(); ++i) {
+        if (input[i] == '"') {
+            input.insert(i, "\\");
+            ++i; // skip the added backslash
+        }
+    }
+}
+
+std::string extract_token(std::string& token){
+    escape_quotes_in_place(token);
+	std::string output = extract_variable(token);
+	if (output.empty()){
+		return "\"" + token + "\"";
+	}
+    else {
+		return "\"" + output + "\"_v";
+    }
+}
+
 
 bool ManifestParser::ParseRule(string* err) {
   string name;
@@ -170,6 +222,22 @@ bool ManifestParser::ParseRule(string* err) {
     return lexer_.Error("expected 'command =' line", err);
 
   env_->AddRule(rule);
+  
+    // add rule here to the stringstream
+	g_output_ss << "\nauto " << rule->name_ << " = rule{{\n"
+		<< "    ";
+	g_output_ss << "bind(command, {";
+
+	std::vector<std::string> tokens = split_by_spaces(rule->bindings_.at("command").Unparse());
+
+    for (size_t i=0; i < tokens.size(); ++i) {
+        g_output_ss << extract_token(tokens[i]);
+        if (i != tokens.size() - 1) {
+            g_output_ss << ",";
+        }
+    }
+	g_output_ss << "})\n" << "}};\n";
+
   return true;
 }
 
@@ -180,6 +248,7 @@ bool ManifestParser::ParseLet(string* key, EvalString* value, string* err) {
     return false;
   if (!lexer_.ReadVarValue(value, err))
     return false;
+
   return true;
 }
 
@@ -200,6 +269,11 @@ bool ManifestParser::ParseDefault(string* err) {
     if (!state_->AddDefault(path, &default_err))
       return lexer_.Error(default_err, err);
 
+/*
+// add to converter output for each default: default(str("hello"));
+    g_output_ss << "\n\tdefault(str(\"";
+    g_output_ss << path << "\"));\n";
+*/
     eval.Clear();
     if (!lexer_.ReadPath(&eval, err))
       return false;
@@ -308,6 +382,8 @@ bool ManifestParser::ParseEdge(string* err) {
   // Bindings on edges are rare, so allocate per-edge envs only when needed.
   bool has_indent_token = lexer_.PeekToken(Lexer::INDENT);
   BindingEnv* env = has_indent_token ? new BindingEnv(env_) : env_;
+  
+  std::map<std::string, std::string> savedBindings;
   while (has_indent_token) {
     string key;
     EvalString val;
@@ -315,6 +391,10 @@ bool ManifestParser::ParseEdge(string* err) {
       return false;
 
     env->AddBinding(key, val.Evaluate(env_));
+
+    // mr: save bindings for adding later
+    savedBindings[key] = val.Evaluate(env_);
+
     has_indent_token = lexer_.PeekToken(Lexer::INDENT);
   }
 
@@ -409,8 +489,53 @@ bool ManifestParser::ParseEdge(string* err) {
     }
     assert(!edge->dyndep_->generated_by_dep_loader());
   }
+    
+    // add edge here to the stringstream
+	g_output_ss << "\nauto build" << g_build_count++ << " = build(";
+    
+    g_output_ss << "list{{";
+    for (auto it = outs.begin(); it != outs.end(); ++it)
+    {
+        g_output_ss << "str{{\"" << it->Evaluate(env) << "\"}}";
+		if (std::next(it) != outs.end()) {
+            g_output_ss << ", ";
+        }
+    }
+    g_output_ss << "}},\n";
+    
+    g_output_ss << "\tlist{{}},\n";
+ 
+    std::string tmp_rule_name = rule->name_;
+    if (tmp_rule_name == "phony") tmp_rule_name = "rule::phony";
+    g_output_ss << "\t" << tmp_rule_name << ",\n";
+    
+    g_output_ss << "\tlist{{ ";
+    for (auto it = ins.begin(); it != ins.end(); ++it)
+    {
+        g_output_ss << "\t\tstr{{\"" << it->Evaluate(env) << "\"}}";
+		if (std::next(it) != ins.end()) {
+            g_output_ss << ", ";
+        }
+    }
+    g_output_ss << " } },\n";
 
-  return true;
+    g_output_ss << "\tlist{{}},\n";
+    g_output_ss << "\tlist{{}},\n";
+
+    g_output_ss << "{";
+	for (auto it = savedBindings.begin(); it != savedBindings.end(); ++it) {
+        escape_quotes_in_place(it->second);
+		g_output_ss << "\tbind(" << it->first << ", {\"" << it->second << "\"})";
+		if (std::next(it) != savedBindings.end()) {
+			g_output_ss << ",\n";
+		} else {
+			g_output_ss << "\n";
+		}
+	} 
+    g_output_ss << "}";
+ 
+    g_output_ss << ");\n";
+    return true;
 }
 
 bool ManifestParser::ParseFileInclude(bool new_scope, string* err) {

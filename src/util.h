@@ -48,6 +48,11 @@ NORETURN void Fatal(const char* msg, ...);
 #  define NINJA_FALLTHROUGH // nothing
 #endif
 
+// my globals
+#include <sstream>
+extern std::stringstream g_output_ss;
+extern int g_build_count;
+
 /// Log a warning message.
 void Warning(const char* msg, ...);
 void Warning(const char* msg, va_list ap);
