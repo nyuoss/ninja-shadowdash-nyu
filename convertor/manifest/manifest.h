@@ -60,6 +60,36 @@ public:
         list implicit_inputs,
         list order_only_inputs,
         map bindings);
+
+    build(
+        list outputs,
+        const char* rule,
+        list inputs);
+
+    build(
+        list outputs,
+        const char* rule,
+        list inputs,
+        list order_only_inputs,
+        map bindings);
+    
+    build(
+        list outputs,
+        const char* rule,
+        list inputs,
+        map bindings);
+
+    build(
+        list outputs,
+        const char* rule,
+        map bindings);
+        
+    build(
+        list outputs,
+        list implicit_outputs,
+        const char* rule,
+        list order_only_inputs,
+        map bindings);
 };
 
 } // namespace shadowdash

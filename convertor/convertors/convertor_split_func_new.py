@@ -17,8 +17,13 @@ if len(sys.argv) > 1:
 build_file_counter = 0
 current_file_build_counter = 0
 
+special_handled_builds = ["1011000", "1011011", "1011001", "1010001", "1110011"]
+
 # debug purpose: limit how many builds are allowed, ignore extra builds
 build_limiter = None
+
+report_build_object = False
+build_object_stats = {}
 
 def clear_directory(directory_path):
     if os.path.isdir(directory_path):
@@ -174,9 +179,24 @@ using namespace shadowdash;
         self.write_line(f"build(list{{ {{{', '.join(_out)}}} }},")
         self.incr_indent()
 
+        # =====================================
+        combine = "1" # out
+        combine += ("0" if implicit_out == None else "1") # implicit_out
+        combine += "1" # rule
+        combine += ("0" if _in == None else "1") # in
+        combine += ("0" if implicit_in == None else "1") # implicit_in
+        combine += ("0" if order_in == None else "1") # order_in
+        combine += ("0" if len(vars) == 0 else "1") # bindings
+
+        matched = False
+        if combine in special_handled_builds:
+            matched = True
+        # =====================================
+
         # write implicit_outputs
         if implicit_out == None:
-            self.write_line("""list{{}},""")
+            if matched == False:
+                self.write_line("""list{{}},""")
         else:
             self.write_line(f"""list{{ {{{', '.join(implicit_out)}}} }},""")
 
@@ -186,23 +206,30 @@ using namespace shadowdash;
 
         # write inputs
         if _in != None:
-            self.write_line(f"list{{ {{{', '.join(_in)}}} }},")
+            # TODO: temporary solution here, need to generally handle the ',' character
+            if combine == "1011000":
+                self.write_line(f"list{{ {{{', '.join(_in)}}} }}")
+            else:
+                self.write_line(f"list{{ {{{', '.join(_in)}}} }},")
             # self.write_line(f"list{{ {{{"str()"}}} }},")
         else:
-            self.write_line("""list{{}},""")
+            if matched == False:
+                self.write_line("""list{{}},""")
         
         # write implicit_inputs
         if implicit_in != None:
             self.write_line(f"list{{ {{{', '.join(implicit_in)}}} }},")
         else:
-            self.write_line("""list{{}},""")
+            if matched == False:
+                self.write_line("""list{{}},""")
 
         # write order_only_inputs
         if order_in != None:
             self.write_line(f"list{{ {{{', '.join(order_in)}}} }},")
             # self.write_line(f"list{{ {{str{{{{{', '.join(order_in)}}}}}}} }},")
         else:
-            self.write_line("""list{{}},""")
+            if matched == False:
+                self.write_line("""list{{}},""")
 
         transformed = []
         for key in vars:
@@ -213,7 +240,14 @@ using namespace shadowdash;
             # transformed.append(f"{{\"{key}\", str{{{{\"{val}\"}}}}}}")
 
             transformed.append(f"{{{key}, {val}}}")
-        self.write_line(f"{{ {', '.join(transformed)} }}")
+        if len(transformed) != 0 or matched == False:
+            self.write_line(f"{{ {', '.join(transformed)} }}")
+        
+        if report_build_object == True:
+            if combine not in build_object_stats:
+                build_object_stats[combine] = 1
+            else:
+                build_object_stats[combine] += 1
 
         self.decr_indent()
         self.write_line(");")
@@ -329,6 +363,46 @@ class CompileScriptWriter(FileWriter):
         self.write_line(f"parallel --jobs {job_threads} < commands.txt")
         libs = " ".join([f"manifest{to_hex(i)}.o" for i in range(self.max_index)])
         self.write_line(f"clang++ {optimizer} -shared -fPIC -o libmanifest.so manifest_main.cc {libs} rule.o manifest.o && echo \"manifest compiled.\"")
+        self.newline()
+
+    def open(self):
+        self.file = open(self.file_path, 'w')
+
+    def close(self):
+        if self.file:
+            self.file.close()
+            self.file = None
+
+class NinjaCompileScriptWriter(FileWriter):
+    def __init__(self, file_path, index):
+        super().__init__(file_path)
+
+        self.max_index = index
+    
+    def write_script(self):
+        self.write_line(f"rule shadowdash_compile")
+        self.write_line(f"  command = clang++ {optimizer} -fPIC -c $in -o $out")
+        self.newline()
+
+        self.write_line(f"rule shadowdash_compile_main")
+        self.write_line(f"  command = clang++ {optimizer} -shared -fPIC -o $out $in")
+        self.newline()
+
+        self.write_line(f"build rule.o: shadowdash_compile manifest_rule.cc")
+        self.newline()
+
+        for i in range(self.max_index):
+            self.write_line(f"build manifest{to_hex(i)}.o: shadowdash_compile manifest{to_hex(i)}.cc")
+        self.newline()
+
+        libs = " ".join([f"manifest{to_hex(i)}.o" for i in range(self.max_index)])
+        self.write_line(f"build libmanifest.so: shadowdash_compile_main manifest_main.cc {libs} rule.o manifest.o")
+        self.newline()
+
+        self.write_line(f"build all: phony libmanifest.so")
+        self.newline()
+
+        self.write_line(f"default all")
         self.newline()
 
     def open(self):
@@ -948,10 +1022,14 @@ if __name__ == "__main__":
     writer.write_manifest()
     writer.close()
 
-    writer = CompileScriptWriter(os.path.join(output_dir, f"compile.sh"), manifest_counter)
+    # writer = CompileScriptWriter(os.path.join(output_dir, f"compile.sh"), manifest_counter)
+    writer = NinjaCompileScriptWriter(os.path.join(output_dir, f"build.ninja"), manifest_counter)
     writer.open()
     writer.write_script()
     writer.close()
 
-    os.system("chmod +x ./output/compile.sh")
+    # os.system("chmod +x ./output/compile.sh")
     os.system("cd output && cp ../manifest/manifest.h ./manifest.h && cp ../manifest/manifest.o ./manifest.o && ln -s ../../src/ ./shadowdash_include")
+
+    if report_build_object == True:
+        print(build_object_stats)
