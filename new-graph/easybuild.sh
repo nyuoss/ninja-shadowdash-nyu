@@ -66,10 +66,10 @@ $CXX -fPIC ${shared_flag} -I../src ${extra_flags} ../src/build_log.cc \
     ../src/depfile_parser.cc \
     ../src/version.cc -o "libninja.${lib_extension}"
 
-# Compile test1.cc
-echo "Compiling test1.cc..."
-$CXX -fPIC test1.cc -I../src -L./ -lninja ${rpath_flag} ${extra_flags} -o test1
+# Compile simulate-ninja-graph.cc
+echo "Compiling simulate-ninja-graph.cc..."
+$CXX -fPIC simulate-ninja-graph.cc -I../src -L./ -lninja ${rpath_flag} ${extra_flags} -o simulate-ninja-graph
 
-# Compile hello world using test1
-echo "Running test1..."
-./test1 hello_world
+# Compile hello world using simulate-ninja-graph
+echo "Running simulate-ninja-graph..."
+./simulate-ninja-graph hello_world
