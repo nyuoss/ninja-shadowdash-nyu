@@ -4,7 +4,7 @@ from parser import Parser
 import os
 
 def main():
-    parser = argparse.ArgumentParser(description='Process a file.')
+    parser = argparse.ArgumentParser(description='Converts ninja files to ShadowDash manifest files.')
     
     parser.add_argument('input_file', 
                        help='Path to the input file to process')
