@@ -1,6 +1,5 @@
 import argparse
 from parser import Parser
-from token import Token
 import os
 
 def main():
@@ -17,9 +16,9 @@ def main():
     new_filename = f"{name_without_ext}.build.cc"
     new_file_path = os.path.join(directory, new_filename)
     
-    ninjaparser = Parser(args.file_path)
-    tokenslist = ninjaparser.gettokens()
+    tokenslist = Parser.tokenize(args.file_path)
     
+    # TODO: Use Builder here
     with open(new_file_path, 'w') as outfile:
         for token in tokenslist:
             outfile.write(f"{token.get_string()}\n")
