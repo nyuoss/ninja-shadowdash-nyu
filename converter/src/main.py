@@ -1,29 +1,29 @@
 import argparse
+from builder import Builder
 from parser import Parser
 import os
 
 def main():
     parser = argparse.ArgumentParser(description='Process a file.')
     
-    parser.add_argument('file_path', 
-                       help='Path to the file to process')
+    parser.add_argument('input_file', 
+                       help='Path to the input file to process')
+    parser.add_argument('output_file', 
+                       help='Path to the output file')
     
     args = parser.parse_args()
     
-    directory = os.path.dirname(args.file_path)
-    base_name = os.path.basename(args.file_path)
-    name_without_ext = os.path.splitext(base_name)[0]
-    new_filename = f"{name_without_ext}.build.cc"
-    new_file_path = os.path.join(directory, new_filename)
+    if not os.path.isfile(args.input_file):
+        print(f"Error: The file {args.input_file} does not exist.")
+        exit(1)
     
-    tokenslist = Parser.tokenize(args.file_path)
+    tokenslist = Parser.tokenize(args.input_file)
     
-    # TODO: Use Builder here
-    with open(new_file_path, 'w') as outfile:
-        for token in tokenslist:
-            outfile.write(f"{token.get_string()}\n")
+    with open(args.output_file, 'w') as outfile:
+        content = Builder.get_file_content(tokenslist)
+        outfile.write(content)
             
-    print(f"Successfully wrote tokens to {new_file_path}")
+    print(f"File {args.input_file} converted to {args.output_file}")
 
 	
 

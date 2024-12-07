@@ -22,11 +22,10 @@ class Bind(Token):
     def get_string(self) -> str:
         result = f"bind({self.name}"
         for value in self.values:
-            value.lstrip("$")
             if value in ["$in", "$out"]:
-                result += f", {value}_v"
+                result += f", {value.lstrip('$')}"
             elif value in Token.variables or value.startswith("$"):
-                result += f', "{value}"_v'
+                result += f', "{value.lstrip('$')}"_v'
             else:
                 result += f", \"{value}\""
         result += ")"
@@ -80,7 +79,7 @@ class Build(Token):
         self.out_var = TypeList(self.__params[3]) if len(self.__params) > 3 else None
     
     def get_string(self):
-        result = f"auto build_{self.rule[0]} = build({self.in_var}),\n"
+        result = f"auto build_{self.rule[0]} = build({self.in_var},\n"
         result += f"\t{{}},\n"
         result += f"\t{self.rule},\n"
         result += f"\t{self.out_var if self.out_var else "{}"},\n"

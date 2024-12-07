@@ -48,3 +48,4 @@ void manifest() {
 
   default_(str{ "hello" });
   default_(list{ str{ "foo1" }, str{ "foo2" } });
+}
