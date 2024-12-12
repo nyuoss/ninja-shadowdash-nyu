@@ -1,0 +1,24 @@
+flags = -O3
+
+pool_depth = 4
+
+pool heavy_object_pool
+    depth = pool_depth
+
+rule compile
+    command = g++ $flags -c $in -o $out
+    pool = heavy_object_pool
+
+rule link
+    command = g++ $in -o $out
+
+build hello.o: compile hello.cc
+    flags = -O2
+    pool = console
+
+build hello: link hello.o
+
+build dummy: phony
+
+default hello
+default foo1 foo2
