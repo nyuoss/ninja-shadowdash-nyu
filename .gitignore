@@ -48,4 +48,14 @@
 /.vs/
 /out/
 
-commands.md
+# general dev files for Shadowdash
+*commands.md
+*CMakeFiles
+*.so
+*.dylib
+*.dll
+
+# compile hello_world
+*hello_world
+*hello_world.o
+*simulate-ninja-graph
