@@ -47,6 +47,27 @@ jobs:
               echo "Running $test"
               ./$test
             done
+      - run: 
+          name: Run Compile .o and .so Tests
+          command: |
+            check_success() {
+              if [ $? -eq 0 ]; then
+                echo "$1"
+              else
+                echo "$1"
+                exit 1
+              fi
+            }
+
+            cd src/shadowdash
+
+            g++ -w -std=c++17 -fPIC -c manifest.cc  manifest.h
+            check_success ".o compiled successfully"
+
+            g++ -w -shared -o manifest.so manifest.o
+            check_success ".so compiled successfully"
+
+            cd ../..
 
 
 workflows:
