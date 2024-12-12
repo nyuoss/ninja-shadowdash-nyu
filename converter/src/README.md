@@ -19,14 +19,42 @@ python3 converter.py input_file output_file
 
 # Prerequisites
 - Python 3.6 or higher
+- Testing
+ - pytest
+ - pytest-mock
+ - pytest-cov (optional)
 
 # Test
 
+## Unit Tests
+
+The unit tests are located in the `tests` directory.
+It requires the `pytest` and `pytest-mock` packages to run the tests.
+
+To run the unit tests, you can use the following command:
+```bash
+# from the converter directory
+# ./converter
+pytest
+```
+
+Or with coverage report (requires the `pytest-cov` package):
+```bash
+# from the converter directory
+# ./converter
+pytest --cov=src --cov-report=term
+```
+
+## Factual Tests
+
 To test the program we can use the files in the `docs` folder. The following command will convert the `build.ninja` file to a `build.ninja.cc` file:
 ```bash
-python3 converter.py ../docs/build.ninja build.ninja.cc
+# from the converter directory
+# ./converter
+python3 -m src.converter ./docs/build.ninja build.ninja.cc
 ```
 Aside from formatting, the file `build.ninja.cc` should be identical to the `build.ninja.cc` file in the docs directory.
+
 
 # Implementation
 

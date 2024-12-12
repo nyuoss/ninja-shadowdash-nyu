@@ -6,7 +6,7 @@ class Token(ABC):
     @abstractmethod
     def get_string(self) -> str:
         """Return the string representation of the token in C"""
-        pass
+        raise NotImplementedError
 
     def __repr__(self):
         return self.get_string()

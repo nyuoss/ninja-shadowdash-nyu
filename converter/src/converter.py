@@ -1,7 +1,7 @@
 import argparse
-from builder import Builder
-from parser import Parser
 import os
+from .builder import Builder
+from .parser import Parser
 
 def main():
     parser = argparse.ArgumentParser(description='Converts ninja files to ShadowDash manifest files.')
@@ -24,8 +24,6 @@ def main():
         outfile.write(content)
             
     print(f"File {args.input_file} converted to {args.output_file}")
-
-	
 
 if __name__ == '__main__':
     main()

@@ -1,5 +1,5 @@
 import re
-from token import Token, Rule, Pool, Bind, Assign, Build, Default
+from .token import Token, Rule, Pool, Bind, Assign, Build, Default
 
 class Parser:
     @staticmethod
@@ -9,11 +9,11 @@ class Parser:
         with open(path, "r") as ninjafile:
             matches = pattern.findall(ninjafile.read())
             for match in matches:
-                tokenlist.append(Parser.__get_token(match))
+                tokenlist.append(Parser._get_token(match))
         return tokenlist
     
     @staticmethod
-    def __get_token(command: str) -> Token:
+    def _get_token(command: str) -> Token:
         if command.startswith("rule"):
             return Rule(command)
         elif command.startswith("pool "):
